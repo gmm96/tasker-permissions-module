@@ -1,0 +1,8 @@
+id=tasker-permissions
+name=Tasker Permissions
+version=1.0
+versionCode=1
+author=gmm96
+description=Grant advanced hidden permissions to Tasker, Tasker Settings, and more.
+action=action.sh
+webui=true
