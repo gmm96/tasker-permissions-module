@@ -1003,13 +1003,19 @@
             if (!(await ensureBridgeReady())) return;
 
             for (const app of appsData){await processPermissions(app.package,app.permissions,'grant');}
-            alert("Operation completed successfully.");
             await updateAllStatuses();
+            alert("Operation completed successfully.");
         };
 
         
-async function processPermissions(pkg,perms,action){
- for(const perm of perms){await executeShell(`pm ${action} ${pkg} ${perm}`);}
+async function processPermissions(pkg, perms, action){
+    for (const perm of perms){
+        try{
+            await executeShell(`pm ${action} ${pkg} ${perm}`);
+        }catch(e){
+            console.error(`Failed ${action} ${perm} for ${pkg}`, e);
+        }
+    }
 }
 document.getElementById('revokeSelectedBtn').onclick=async()=>{
  if(!activeTargetApp)return;
