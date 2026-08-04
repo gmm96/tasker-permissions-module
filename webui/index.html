@@ -87,7 +87,7 @@
             gap: 8px;
             overflow-x: auto;
             padding-bottom: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
             scrollbar-width: none;
         }
 
@@ -191,7 +191,7 @@
         }
 
         .status-badge {
-            padding: 6px 12px;
+            padding: 4px 8px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: 600;
@@ -239,29 +239,26 @@
         .detail-top-nav {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
         }
 
         .btn-back {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 8px 14px;
+            padding: 0px 0px;
             border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 28px;
+            font-weight: 800;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 6px;
         }
 
         .detail-header-card {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 14px;
-            padding: 16px;
+            padding: 10px;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
@@ -295,7 +292,7 @@
         }
 
         .detail-package {
-            font-size: 12px;
+            font-size: 10px;
             color: var(--text-secondary);
             margin: 4px 0 0 0;
             font-family: monospace;
@@ -492,21 +489,22 @@
     <div id="mainView" class="view-screen active">
         <div class="container">
             <header>
+                <nav class="tabs-container">
+                    <button class="tab-btn active" data-filter="all">All <span class="tab-count" id="count-all">0</span></button>
+                    <button class="tab-btn" data-filter="no-perms">No permissions <span class="tab-count" id="count-no-perms">0</span></button>
+                    <button class="tab-btn" data-filter="partial">Partial <span class="tab-count" id="count-partial">0</span></button>
+                    <button class="tab-btn" data-filter="all-perms">All permissions <span class="tab-count" id="count-all-perms">0</span></button>
+                    <button class="tab-btn" data-filter="not-installed">Not installed <span class="tab-count" id="count-not-installed">0</span></button>
+                </nav>
+                <!--
+                <div id="bridgeDebug" class="empty-message" style="display:none; margin-bottom: 16px; font-size:11px; font-family:monospace; text-align:left;"></div>
+                -->
                 <div style="display:flex;gap:10px;">
-<button class="btn-main btn-danger" id="revokeAllBtn" style="flex:1;">Revoke all</button>
-<button class="btn-main" id="grantAllBtn" style="flex:1;">Grant all</button>
-</div>
-                <div id="bridgeDebug" class="empty-message" style="display:none; margin-top:10px; font-size:11px; font-family:monospace; text-align:left;"></div>
+                    <button class="btn-main btn-danger" id="revokeAllBtn" style="flex:1;">Revoke all</button>
+                    <button class="btn-main" id="grantAllBtn" style="flex:1;">Grant all</button>
+                </div>
             </header>
-
-            <nav class="tabs-container">
-                <button class="tab-btn active" data-filter="all">All <span class="tab-count" id="count-all">0</span></button>
-                <button class="tab-btn" data-filter="no-perms">No permissions <span class="tab-count" id="count-no-perms">0</span></button>
-                <button class="tab-btn" data-filter="partial">Partial <span class="tab-count" id="count-partial">0</span></button>
-                <button class="tab-btn" data-filter="all-perms">All permissions <span class="tab-count" id="count-all-perms">0</span></button>
-                <button class="tab-btn" data-filter="not-installed">Not installed <span class="tab-count" id="count-not-installed">0</span></button>
-            </nav>
-
+            
             <main class="list-container" id="appsList">
                 <div class="empty-message">Cargando aplicaciones...</div>
             </main>
@@ -515,25 +513,29 @@
 
     <div id="detailView" class="view-screen">
         <div class="container">
-            <div class="detail-top-nav">
-                <button class="btn-back" id="backBtn">
-                    <span>&#8592;</span> Back
-                </button>
-            </div>
-
             <div class="detail-header-card">
+                <div class="detail-top-nav">
+                <button class="btn-back" id="backBtn">
+                    <span>&#8592;</span>
+                </button>
+                </div>
                 <div class="detail-app-meta">
                     <img id="detailIcon" class="detail-icon" src="" alt="App icon">
                     <div style="min-width: 0;">
+                        <div style="display: flex; justify-content: space-between;">
                         <h2 class="detail-title" id="detailTitle">App Name</h2>
+                        <span class="status-badge" id="detailBadge">Status</span>
+                        </div>
                         <p class="detail-package" id="detailPackage">package.name</p>
                     </div>
                 </div>
-                <span class="status-badge" id="detailBadge">Status</span>
+                
+                
             </div>
-
+            
             <div class="section-bar">
-                <p class="section-title">Select the permissions you want to grant via ADB:</p>
+                
+                <p class="section-title">Permissions</p>
                 <div class="perm-select-actions">
                     <button class="btn-text-action" id="deselectAllBtn">Clear</button>
                     <button class="btn-text-action" id="selectAllBtn">Select All</button>
@@ -683,7 +685,7 @@
                 showBridgeDebug('No window.Shizuku bridge object found.');
                 return {
                     statusKey: 'error',
-                    text: 'Verification unavailable',
+                    text: 'Unavailable',
                     class: 'badge-error',
                     permsState: {}
                 };
@@ -708,7 +710,7 @@
                 if (pkgResult === null) {
                     // The bridge object exists but the call itself failed/threw.
                     showBridgeDebug();
-                    return { statusKey: 'error', text: 'Verification unavailable', class: 'badge-error', permsState: {} };
+                    return { statusKey: 'error', text: 'Unavailable', class: 'badge-error', permsState: {} };
                 }
                 if (!pkgResult.includes(`package:${app.package}`)) {
                     return {
