@@ -200,6 +200,17 @@
             text-align: center;
         }
 
+        .detail-status-badge {
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            white-space: nowrap;
+            flex-shrink: 0;
+            text-align: center;
+        }
+
+
         .badge-loading {
             background-color: #2a2a2a;
             color: var(--text-secondary);
@@ -245,7 +256,7 @@
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 0px 0px;
+            padding: 4px;
             border-radius: 8px;
             font-size: 28px;
             font-weight: 800;
@@ -466,14 +477,15 @@
         }
 
         .btn-confirm.btn-danger{
-    background-color: var(--danger-color);
-}
-.btn-confirm.btn-danger:active{
-    background-color: var(--danger-color);
-    filter: brightness(.9);
-}
+            background-color: var(--danger-color);
+        }
 
-.empty-message {
+        .btn-confirm.btn-danger:active{
+            background-color: var(--danger-color);
+            filter: brightness(.9);
+        }
+
+        .empty-message {
             text-align: center;
             color: var(--text-secondary);
             font-size: 14px;
@@ -482,6 +494,7 @@
             border-radius: 12px;
             border: 1px solid var(--border-color);
         }
+
     </style>
 </head>
 <body>
@@ -515,16 +528,22 @@
         <div class="container">
             <div class="detail-header-card">
                 <div class="detail-top-nav">
-                <button class="btn-back" id="backBtn">
+                <!-- <button class="btn-back" id="backBtn">
                     <span>&#8592;</span>
+                </button> -->
+                <button class="btn-back" id="backBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
                 </button>
                 </div>
                 <div class="detail-app-meta">
                     <img id="detailIcon" class="detail-icon" src="" alt="App icon">
-                    <div style="min-width: 0;">
+                    <div style="min-width: calc(100% - 64px);">
                         <div style="display: flex; justify-content: space-between;">
-                        <h2 class="detail-title" id="detailTitle">App Name</h2>
-                        <span class="status-badge" id="detailBadge">Status</span>
+                            <h2 class="detail-title" id="detailTitle">App Name</h2>
+                            <span class="detail-status-badge" id="detailBadge">Status</span>
                         </div>
                         <p class="detail-package" id="detailPackage">package.name</p>
                     </div>
@@ -547,7 +566,7 @@
 
             <div class="detail-actions">
                 <button class="btn-confirm btn-danger" id="revokeSelectedBtn">Revoke selected</button>
-<button class="btn-confirm" id="applySelectedBtn">Grant selected</button>
+                <button class="btn-confirm" id="applySelectedBtn">Grant selected</button>
             </div>
         </div>
     </div>
