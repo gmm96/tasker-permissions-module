@@ -254,9 +254,9 @@
 
         .btn-back {
             background: var(--card-bg);
-            border: 1px solid var(--border-color);
+            border: 0;
             color: var(--text-primary);
-            padding: 4px;
+            padding: 0;
             border-radius: 8px;
             font-size: 28px;
             font-weight: 800;
@@ -286,8 +286,8 @@
         }
 
         .detail-icon {
-            width: 52px;
-            height: 52px;
+            width: 64px;
+            height: 64px;
             border-radius: 12px;
             object-fit: contain;
             flex-shrink: 0;
@@ -305,7 +305,7 @@
         .detail-package {
             font-size: 10px;
             color: var(--text-secondary);
-            margin: 4px 0 0 0;
+            margin: 0 0 6px 0;
             font-family: monospace;
             white-space: nowrap;
             overflow: hidden;
@@ -532,7 +532,7 @@
                     <span>&#8592;</span>
                 </button> -->
                 <button class="btn-back" id="backBtn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
                         <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
@@ -541,11 +541,9 @@
                 <div class="detail-app-meta">
                     <img id="detailIcon" class="detail-icon" src="" alt="App icon">
                     <div style="min-width: calc(100% - 64px);">
-                        <div style="display: flex; justify-content: space-between;">
-                            <h2 class="detail-title" id="detailTitle">App Name</h2>
-                            <span class="detail-status-badge" id="detailBadge">Status</span>
-                        </div>
+                        <h2 class="detail-title" id="detailTitle">App Name</h2>
                         <p class="detail-package" id="detailPackage">package.name</p>
+                        <span class="status-badge" id="detailBadge">Status</span>
                     </div>
                 </div>
                 
