@@ -1,7 +1,8 @@
 // Only the permissions listed here are backed by an App Ops check
 // instead of (or in addition to) the dumpsys "granted=" flag.
 // The op name is NOT always the same string as the permission name.
-const PERMISSION_APPOPS_MAP = {
+const PERMISSION_APPOPS_MAP =
+{
     "android.permission.PACKAGE_USAGE_STATS": "GET_USAGE_STATS"
 };
 
@@ -10,85 +11,85 @@ let appsStatusMap = {};
 let currentFilter = 'all';
 let activeTargetApp = null;
 
-function getCleanPermName(fullPerm) {
+function getCleanPermName(fullPerm)
+{
     return fullPerm.replace(/^android\.permission\./i, '');
 }
 
-function getPermDescription(fullPerm) {
-    return PERMISSION_INFO[fullPerm] || "Grants advanced ADB access for system automation.";
+function getPermDescription(fullPerm)
+{
+    return PERMISSION_INFO[fullPerm] || "";
 }
 
-// Confirmed against a known-working module's webui: the bridge is
-// window.Shizuku (capital S — kept for Shizuku API compatibility,
-// NOT "shevery"/"ksu"), exec() is SYNCHRONOUS and returns a JSON
-// STRING shaped { ok, stdout, stderr }. The module must also have
-// "Full Trust" granted in Shevery (long-press the module card) or
-// getModuleInfo().trusted will be false and exec() will refuse.
-async function tryBridgeCall() {
-    if (window.Shizuku && typeof window.Shizuku.exec === 'function') {
-        return { name: 'Shizuku.exec', run: (cmd) => window.Shizuku.exec(cmd) };
+async function tryBridgeCall()
+{
+    if (window.Shizuku && typeof window.Shizuku.exec === 'function')
+    {
+        return {
+            name: 'Shizuku.exec',
+            run: (cmd) => window.Shizuku.exec(cmd)
+        };
     }
     return null;
 }
 
-function detectShellBridge() {
-    const found = [];
-    ['Shizuku', 'shevery', 'ksu', 'shizuku'].forEach((key) => {
-        if (typeof window[key] !== 'undefined') {
-            const val = window[key];
-            const shape = (val && typeof val === 'object') ? Object.keys(val).join(', ') : typeof val;
-            found.push(`window.${key}: {${shape}}`);
-        }
-    });
-    return found;
-}
-
-async function getModuleTrustInfo() {
+async function getModuleTrustInfo()
+{
     if (!window.Shizuku || typeof window.Shizuku.getModuleInfo !== 'function') return null;
-    try {
+    try
+    {
         return JSON.parse(window.Shizuku.getModuleInfo());
-    } catch (e) {
+    }
+    catch (e) {
         return null;
     }
 }
 
-function showBridgeDebug(extraLine) {
+function showBridgeDebug(extraLine)
+{
     const el = document.getElementById('bridgeDebug');
     if (!el) return;
-    const found = detectShellBridge();
     el.style.display = 'block';
-    let html = found.length
-        ? 'Detected on window: <br>' + found.map(f => '&bull; ' + f).join('<br>')
-        : 'No shell bridge object found on window at all.';
+    let html = window.Shizuku
+        ? 'Detected on window: <br>' + JSON.stringify(window.Shizuku, null, 2)
+        : 'No Shizuku shell bridge object found on window.';
     if (extraLine) html = extraLine + '<br><br>' + html;
     el.innerHTML = html;
 }
 
-async function executeShell(command) {
-    try {
+async function executeShell(command)
+{
+    try
+    {
         const bridge = await tryBridgeCall();
-        if (!bridge) return null; // no bridge object at all
+        if (!bridge) return null;
 
         const raw = await bridge.run(command);
         if (typeof raw !== 'string') return null;
 
         let parsed;
-        try {
+        try
+        {
             parsed = JSON.parse(raw);
-        } catch (e) {
-            // Not JSON — treat the raw string as the output directly.
+        }
+        catch (e)
+        {
             return raw;
         }
 
-        if (parsed && typeof parsed === 'object') {
-            if (parsed.ok === false) {
+        if (parsed && typeof parsed === 'object')
+        {
+            if (parsed.ok === false)
+            {
                 console.warn('Shizuku.exec reported failure for:', command, parsed.stderr);
-                return ''; // ran, but the command itself failed — legit empty result
+                return '';
             }
             return (parsed.stdout != null ? String(parsed.stdout) : '').trim();
         }
         return String(raw);
-    } catch (err) {
+    }
+    catch (err)
+    {
         console.error("Shell execution error:", err);
         return null;
     }
@@ -106,7 +107,8 @@ function isPermissionGrantedInDump(dumpResult, permission) {
     return grantedRegex.test(dumpResult);
 }
 
-async function isPermissionGrantedViaAppOps(app, permission) {
+async function isPermissionGrantedViaAppOps(app, permission)
+{
     const opName = PERMISSION_APPOPS_MAP[permission];
     if (!opName) return null; // not an app-ops-backed permission
     const appOpsResult = await executeShell(`appops get ${app.package} ${opName}`);
@@ -115,10 +117,12 @@ async function isPermissionGrantedViaAppOps(app, permission) {
     return /:\s*allow\b/i.test(appOpsResult);
 }
 
-async function inspectAppStatus(app) {
+async function inspectAppStatus(app)
+{
     const bridge = await tryBridgeCall();
 
-    if (!bridge) {
+    if (!bridge)
+    {
         showBridgeDebug('No window.Shizuku bridge object found.');
         return {
             statusKey: 'error',
@@ -129,12 +133,13 @@ async function inspectAppStatus(app) {
     }
 
     const trustInfo = await getModuleTrustInfo();
-    if (trustInfo && trustInfo.trusted === false) {
+    if (trustInfo && trustInfo.trusted === false)
+    {
         showBridgeDebug(
             `Module "${trustInfo.id || 'tasker-permissions'}" is not trusted (mode: ${trustInfo.accessMode || 'unknown'}). ` +
             `Long-press this module's card in Shevery and grant Full Trust / Full Access.`
         );
-        return {
+        return{
             statusKey: 'error',
             text: 'Module not trusted',
             class: 'badge-error',
@@ -142,14 +147,17 @@ async function inspectAppStatus(app) {
         };
     }
 
-    try {
+    try
+    {
         const pkgResult = await executeShell(`pm list packages ${app.package}`);
-        if (pkgResult === null) {
+        if (pkgResult === null)
+            {
             // The bridge object exists but the call itself failed/threw.
             showBridgeDebug();
             return { statusKey: 'error', text: 'Unavailable', class: 'badge-error', permsState: {} };
         }
-        if (!pkgResult.includes(`package:${app.package}`)) {
+        if (!pkgResult.includes(`package:${app.package}`))
+        {
             return {
                 statusKey: 'not-installed',
                 text: 'Not installed',
@@ -162,7 +170,8 @@ async function inspectAppStatus(app) {
         const permsState = {};
         let grantedCount = 0;
 
-        for (const permission of app.permissions) {
+        for (const permission of app.permissions)
+        {
             const appOpsGranted = await isPermissionGrantedViaAppOps(app, permission);
             const isGranted = (appOpsGranted !== null)
                 ? appOpsGranted
@@ -177,14 +186,18 @@ async function inspectAppStatus(app) {
         let text = `Partial (${grantedCount}/${total})`;
         let cssClass = 'badge-partial';
 
-        if (grantedCount === 0) {
+        if (grantedCount === 0)
+        {
             key = 'no-perms'; text = 'No permissions'; cssClass = 'badge-no-perms';
-        } else if (grantedCount === total) {
+        } else if (grantedCount === total)
+        {
             key = 'all-perms'; text = 'All permissions'; cssClass = 'badge-all';
         }
 
         return { statusKey: key, text, class: cssClass, permsState };
-    } catch (e) {
+    }
+    catch (e)
+    {
         console.error("Error inspecting " + app.id, e);
         return {
             statusKey: 'error',
@@ -195,24 +208,32 @@ async function inspectAppStatus(app) {
     }
 }
 
-async function init() {
-    try {
+async function init()
+{
+    try
+    {
         setupTabs();
         renderList();
         await updateAllStatuses();
-    } catch(e) {
+    }
+    catch(e)
+    {
         console.error("Initialization error", e);
         const list = document.getElementById('appsList');
-        if (list) {
+        if (list)
+        {
             list.innerHTML = '<div class="empty-message">Error de inicialización: ' + e.message + '</div>';
         }
     }
 }
 
-function setupTabs() {
+function setupTabs()
+{
     const tabs = document.querySelectorAll('.tab-btn');
-    tabs.forEach(tab => {
-        tab.onclick = () => {
+    tabs.forEach(tab =>
+    {
+        tab.onclick = () =>
+        {
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             currentFilter = tab.getAttribute('data-filter');
@@ -221,16 +242,19 @@ function setupTabs() {
     });
 }
 
-function renderList() {
+function renderList()
+{
     const list = document.getElementById('appsList');
     if (!list) return;
     list.innerHTML = '';
     let visibleCount = 0;
 
-    appsData.forEach(app => {
+    appsData.forEach(app =>
+    {
         const statusInfo = appsStatusMap[app.id] || { statusKey: 'loading', text: 'Checking...', class: 'badge-loading' };
         
-        if (currentFilter !== 'all' && statusInfo.statusKey !== currentFilter) {
+        if (currentFilter !== 'all' && statusInfo.statusKey !== currentFilter) 
+        {
             return;
         }
         visibleCount++;
@@ -246,7 +270,8 @@ function renderList() {
         icon.className = 'app-icon';
         icon.src = app.icon;
         icon.alt = app.name;
-        icon.onerror = () => { 
+        icon.onerror = () =>
+        { 
             icon.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="%23b3b3b3"><path d="M5 3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H5zm0 2h14v14H5V5zm4 2v2h6V7H9zm0 4v2h6v-2H9zm0 4v2h6v-2H9z"/></svg>'; 
         };
 
@@ -276,18 +301,28 @@ function renderList() {
         list.appendChild(item);
     });
 
-    if (visibleCount === 0) {
+    if (visibleCount === 0)
+    {
         list.innerHTML = '<div class="empty-message">No applications found in this category</div>';
     }
 }
 
-async function updateAllStatuses() {
-    const counts = { 'all': appsData.length, 'no-perms': 0, 'partial': 0, 'all-perms': 0, 'not-installed': 0 };
+async function updateAllStatuses()
+{
+    const counts = {
+        'all': appsData.length,
+        'no-perms': 0,
+        'partial': 0,
+        'all-perms': 0,
+        'not-installed': 0
+    };
 
-    for (const app of appsData) {
+    for (const app of appsData)
+    {
         const status = await inspectAppStatus(app);
         appsStatusMap[app.id] = status;
-        if (counts[status.statusKey] !== undefined) {
+        if (counts[status.statusKey] !== undefined)
+        {
             counts[status.statusKey]++;
         }
     }
@@ -301,7 +336,8 @@ async function updateAllStatuses() {
     renderList();
 }
 
-function renderDetailContent(app, statusInfo) {
+function renderDetailContent(app, statusInfo)
+{
     document.getElementById('detailTitle').textContent = app.name;
     document.getElementById('detailPackage').textContent = app.package;
     document.getElementById('detailIcon').src = app.icon;
@@ -313,12 +349,14 @@ function renderDetailContent(app, statusInfo) {
     const permListContainer = document.getElementById('detailPermsList');
     permListContainer.innerHTML = '';
 
-    if (!app.permissions || app.permissions.length === 0) {
+    if (!app.permissions || app.permissions.length === 0)
+    {
         permListContainer.innerHTML = '<div class="empty-message">No permissions declared for this app</div>';
         return;
     }
 
-    app.permissions.forEach(perm => {
+    app.permissions.forEach(perm =>
+    {
         const isGranted = statusInfo.permsState ? !!statusInfo.permsState[perm] : false;
 
         const label = document.createElement('label');
@@ -359,7 +397,8 @@ function renderDetailContent(app, statusInfo) {
     });
 }
 
-async function openAppDetailView(app) {
+async function openAppDetailView(app)
+{
     activeTargetApp = app;
     let statusInfo = appsStatusMap[app.id] || { text: 'Checking...', class: 'badge-loading', permsState: {} };
 
@@ -369,16 +408,19 @@ async function openAppDetailView(app) {
     document.getElementById('detailView').classList.add('active');
     window.scrollTo(0, 0);
 
-    if (!appsStatusMap[app.id] || statusInfo.statusKey === 'loading') {
+    if (!appsStatusMap[app.id] || statusInfo.statusKey === 'loading')
+    {
         const freshStatus = await inspectAppStatus(app);
         appsStatusMap[app.id] = freshStatus;
-        if (activeTargetApp && activeTargetApp.id === app.id) {
+        if (activeTargetApp && activeTargetApp.id === app.id)
+        {
             renderDetailContent(app, freshStatus);
         }
     }
 }
 
-function showMainView() {
+function showMainView()
+{
     document.getElementById('detailView').classList.remove('active');
     document.getElementById('mainView').classList.add('active');
     activeTargetApp = null;
@@ -386,25 +428,30 @@ function showMainView() {
 
 document.getElementById('backBtn').onclick = showMainView;
 
-document.getElementById('selectAllBtn').onclick = () => {
+document.getElementById('selectAllBtn').onclick = () =>
+{
     const checkboxes = document.querySelectorAll('#detailPermsList input[type="checkbox"]');
     checkboxes.forEach(cb => cb.checked = true);
 };
 
-document.getElementById('deselectAllBtn').onclick = () => {
+document.getElementById('deselectAllBtn').onclick = () =>
+{
     const checkboxes = document.querySelectorAll('#detailPermsList input[type="checkbox"]');
     checkboxes.forEach(cb => cb.checked = false);
 };
 
-async function ensureBridgeReady() {
+async function ensureBridgeReady()
+{
     const bridge = await tryBridgeCall();
-    if (!bridge) {
+    if (!bridge)
+    {
         showBridgeDebug('No window.Shizuku bridge object found — nothing was granted.');
         alert("Could not reach the Shevery shell bridge — nothing was granted. See the debug info under the header.");
         return false;
     }
     const trustInfo = await getModuleTrustInfo();
-    if (trustInfo && trustInfo.trusted === false) {
+    if (trustInfo && trustInfo.trusted === false)
+    {
         showBridgeDebug(
             `Module "${trustInfo.id || 'tasker-permissions'}" is not trusted — nothing was granted. ` +
             `Long-press this module's card in Shevery and grant Full Trust / Full Access.`
@@ -415,13 +462,15 @@ async function ensureBridgeReady() {
     return true;
 }
 
-document.getElementById('applySelectedBtn').onclick = async () => {
+document.getElementById('applySelectedBtn').onclick = async () =>
+{
     if (!activeTargetApp) return;
 
     const checkboxes = document.querySelectorAll('#detailPermsList input[type="checkbox"]:checked');
     const selectedPerms = Array.from(checkboxes).map(cb => cb.value);
 
-    if (selectedPerms.length === 0) {
+    if (selectedPerms.length === 0)
+    {
         alert("No permissions selected to grant.");
         return;
     }
@@ -435,40 +484,58 @@ document.getElementById('applySelectedBtn').onclick = async () => {
     showMainView();
 };
 
-document.getElementById('grantAllBtn').onclick = async () => {
+document.getElementById('grantAllBtn').onclick = async () =>
+{
     if (appsData.length === 0) return;
     if (!confirm("Are you sure you want to grant all permissions to all applications?")) return;
 
     if (!(await ensureBridgeReady())) return;
 
-    for (const app of appsData){await processPermissions(app.package,app.permissions,'grant');}
+    for (const app of appsData)
+    {
+        await processPermissions(app.package,app.permissions,'grant');
+    }
     await updateAllStatuses();
     alert("Operation completed successfully.");
 };
 
 async function processPermissions(pkg, perms, action){
-    for (const perm of perms){
-        try{
+    for (const perm of perms)
+    {
+        try
+        {
             await executeShell(`pm ${action} ${pkg} ${perm}`);
-        }catch(e){
+        }
+        catch(e)
+        {
             console.error(`Failed ${action} ${perm} for ${pkg}`, e);
         }
     }
 }
 
-document.getElementById('revokeSelectedBtn').onclick=async()=>{
-    if(!activeTargetApp)return;
-    const perms=[...document.querySelectorAll('#detailPermsList input[type="checkbox"]:checked')].map(x=>x.value);
-    if(!perms.length){alert("No permissions selected.");return;}
-    if(!(await ensureBridgeReady()))return;
+document.getElementById('revokeSelectedBtn').onclick = async () =>
+{
+    if (!activeTargetApp) return;
+    const perms = [...document.querySelectorAll('#detailPermsList input[type="checkbox"]:checked')].map(x => x.value);
+    if (!perms.length)
+    {
+        alert("No permissions selected.");
+        return;
+    }
+    if (!(await ensureBridgeReady())) return;
     await processPermissions(activeTargetApp.package,perms,'revoke');
-    await updateAllStatuses();showMainView();
+    await updateAllStatuses();
+    showMainView();
 };
 
-document.getElementById('revokeAllBtn').onclick=async()=>{
-    if(!confirm("Are you sure you want to revoke all permissions from all applications?"))return;
-    if(!(await ensureBridgeReady()))return;
-    for(const app of appsData){await processPermissions(app.package,app.permissions,'revoke');}
+document.getElementById('revokeAllBtn').onclick = async () =>
+{
+    if (!confirm("Are you sure you want to revoke all permissions from all applications?")) return;
+    if (!(await ensureBridgeReady())) return;
+    for (const app of appsData)
+    {
+        await processPermissions(app.package,app.permissions,'revoke');
+    }
     await updateAllStatuses();
     alert("Operation completed successfully.");
 };

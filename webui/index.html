@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -13,9 +13,9 @@
             <header>
                 <nav class="tabs-container">
                     <button class="tab-btn active" data-filter="all">All <span class="tab-count" id="count-all">0</span></button>
-                    <button class="tab-btn" data-filter="no-perms">No permissions <span class="tab-count" id="count-no-perms">0</span></button>
+                    <button class="tab-btn" data-filter="no-perms">Not granted <span class="tab-count" id="count-no-perms">0</span></button>
                     <button class="tab-btn" data-filter="partial">Partial <span class="tab-count" id="count-partial">0</span></button>
-                    <button class="tab-btn" data-filter="all-perms">All permissions <span class="tab-count" id="count-all-perms">0</span></button>
+                    <button class="tab-btn" data-filter="all-perms">Granted <span class="tab-count" id="count-all-perms">0</span></button>
                     <button class="tab-btn" data-filter="not-installed">Not installed <span class="tab-count" id="count-not-installed">0</span></button>
                 </nav>
 
@@ -28,7 +28,7 @@
             </header>
             
             <main class="list-container" id="appsList">
-                <div class="empty-message">Cargando aplicaciones...</div>
+                <div class="empty-message">Loading apps...</div>
             </main>
         </div>
     </div>
@@ -47,8 +47,8 @@
                 <div class="detail-app-meta">
                     <img id="detailIcon" class="detail-icon" src="" alt="App icon">
                     <div style="min-width: calc(100% - 64px);">
-                        <h2 class="detail-title" id="detailTitle">App Name</h2>
-                        <p class="detail-package" id="detailPackage">package.name</p>
+                        <h2 class="detail-title" id="detailTitle">App name</h2>
+                        <p class="detail-package" id="detailPackage">Package name</p>
                         <span class="status-badge" id="detailBadge">Status</span>
                     </div>
                 </div>
@@ -59,8 +59,8 @@
                 
                 <p class="section-title">Permissions</p>
                 <div class="perm-select-actions">
-                    <button class="btn-text-action" id="deselectAllBtn">Clear</button>
-                    <button class="btn-text-action" id="selectAllBtn">Select All</button>
+                    <button class="btn-text-action" id="deselectAllBtn">Clear all</button>
+                    <button class="btn-text-action" id="selectAllBtn">Select all</button>
                 </div>
             </div>
 

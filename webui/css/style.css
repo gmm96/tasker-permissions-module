@@ -315,6 +315,8 @@ h1 {
 
 .section-title {
     font-size: 13px;
+    text-transform: uppercase;
+    font-weight: 600;
     color: var(--text-secondary);
     margin: 0;
     flex: 1;
