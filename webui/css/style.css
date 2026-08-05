@@ -19,7 +19,7 @@
 
 html, body {
     width: 100%;
-    height: 100%;
+    min-height: 100%;
     margin: 0;
     padding: 0;
     background-color: var(--bg-color);
@@ -30,19 +30,25 @@ html, body {
 .view-screen {
     display: none;
     width: 100%;
-    min-height: 100vh;
     padding: 16px;
     box-sizing: border-box;
 }
 
 .view-screen.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--bg-color);
 }
 
 .container {
     max-width: 600px;
     margin: 0 auto;
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background-color: var(--bg-color);
 }
 
 header {
@@ -239,6 +245,18 @@ h1 {
     border: 1px solid var(--success-color);
 }
 
+/* ============================================
+   DETAIL VIEW: columna flex de altura mínima
+   100vh (crece si hace falta más, con scroll
+   NATURAL de página, nada de vh/innerHeight
+   forzando alturas). Cabecera + barra de permisos
+   fijas arriba (sticky), botones fijos abajo
+   (sticky) y empujados al fondo con margin-top:auto
+   cuando la lista es corta. TODAS las capas llevan
+   background-color explícito porque este WebView
+   no repinta bien fondos "heredados" visualmente.
+   ============================================ */
+
 .detail-top-nav {
     display: flex;
     align-items: center;
@@ -257,12 +275,23 @@ h1 {
     align-items: center;
 }
 
+.detail-sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--bg-color);
+    padding-top: 16px;
+    margin: -16px -16px 0 -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
 .detail-header-card {
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 14px;
     padding: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -309,7 +338,7 @@ h1 {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 14px;
+    padding-bottom: 14px;
     flex-wrap: wrap;
 }
 
@@ -356,7 +385,10 @@ h1 {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    margin-bottom: 24px;
+    padding-top: 4px;
+    padding-bottom: 16px;
+    flex: 1;
+    background-color: var(--bg-color);
 }
 
 .perm-card {
@@ -429,8 +461,9 @@ h1 {
 
 .detail-actions {
     position: sticky;
-    bottom: 16px;
+    bottom: 60px;
     width: 100%;
+    margin-top: auto;
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 12px;
