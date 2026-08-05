@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fix=cover">
     <title>Tasker Permissions</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script>
 </head>
 <body>
 
@@ -73,7 +75,8 @@
             </div>
         </div>
     </div>
-
+    
+    <script src="js/viewport-fix.js"></script>
     <script src="js/apps.js"></script>
     <script src="js/permissions.js"></script>
     <script src="js/manager.js"></script>

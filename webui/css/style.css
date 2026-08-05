@@ -37,7 +37,7 @@ html, body {
 .view-screen.active {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    /*min-height: 100vh;*/
     background-color: var(--bg-color);
 }
 
@@ -387,8 +387,10 @@ h1 {
     gap: 12px;
     padding-top: 4px;
     padding-bottom: 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     flex: 1;
     background-color: var(--bg-color);
+    height: 100%
 }
 
 .perm-card {
@@ -461,7 +463,9 @@ h1 {
 
 .detail-actions {
     position: sticky;
-    bottom: 60px;
+    bottom: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: 100;
     width: 100%;
     margin-top: auto;
     background-color: var(--card-bg);
