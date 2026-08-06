@@ -11,6 +11,19 @@ let appsStatusMap = {};
 let currentFilter = 'all';
 let activeTargetApp = null;
 
+function alertUi(message)
+{
+    const toast = document.getElementById("toast");
+
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+        toast.classList.remove("show");
+    }, 2500);
+}
+
 function getCleanPermName(fullPerm)
 {
     return fullPerm.replace(/^android\.permission\./i, '');
@@ -338,6 +351,10 @@ async function updateAllStatuses()
 
 function renderDetailContent(app, statusInfo)
 {
+    const uiDisabled =
+        statusInfo.statusKey === 'not-installed' ||
+        statusInfo.statusKey === 'error';
+    
     document.getElementById('detailTitle').textContent = app.name;
     document.getElementById('detailPackage').textContent = app.package;
     document.getElementById('detailIcon').src = app.icon;
@@ -355,6 +372,11 @@ function renderDetailContent(app, statusInfo)
         return;
     }
 
+    document.getElementById('selectAllBtn').disabled = uiDisabled;
+    document.getElementById('deselectAllBtn').disabled = uiDisabled;
+    document.getElementById('applySelectedBtn').disabled = uiDisabled;
+    document.getElementById('revokeSelectedBtn').disabled = uiDisabled;
+
     app.permissions.forEach(perm =>
     {
         const isGranted = statusInfo.permsState ? !!statusInfo.permsState[perm] : false;
@@ -366,6 +388,7 @@ function renderDetailContent(app, statusInfo)
         checkbox.type = 'checkbox';
         checkbox.value = perm;
         checkbox.checked = !isGranted;
+        checkbox.disabled = uiDisabled;
 
         const info = document.createElement('div');
         info.className = 'perm-info';
@@ -446,7 +469,7 @@ async function ensureBridgeReady()
     if (!bridge)
     {
         showBridgeDebug('No window.Shizuku bridge object found — nothing was granted.');
-        alert("Could not reach the Shevery shell bridge — nothing was granted. See the debug info under the header.");
+        alertUi("Could not reach the Shevery shell bridge — nothing was granted. See the debug info under the header.");
         return false;
     }
     const trustInfo = await getModuleTrustInfo();
@@ -456,7 +479,7 @@ async function ensureBridgeReady()
             `Module "${trustInfo.id || 'tasker-permissions'}" is not trusted — nothing was granted. ` +
             `Long-press this module's card in Shevery and grant Full Trust / Full Access.`
         );
-        alert("This module isn't trusted yet in Shevery — nothing was granted. See the debug info under the header.");
+        alertUi("This module isn't trusted yet in Shevery — nothing was granted. See the debug info under the header.");
         return false;
     }
     return true;
@@ -471,7 +494,7 @@ document.getElementById('applySelectedBtn').onclick = async () =>
 
     if (selectedPerms.length === 0)
     {
-        alert("No permissions selected to grant.");
+        alertUi("No permissions selected to grant.");
         return;
     }
 
@@ -479,7 +502,7 @@ document.getElementById('applySelectedBtn').onclick = async () =>
 
     await processPermissions(activeTargetApp.package, selectedPerms, 'grant');
 
-    alert(`Permissions successfully processed for ${activeTargetApp.name}`);
+    alertUi(`Permissions successfully processed for ${activeTargetApp.name}`);
     await updateAllStatuses();
     showMainView();
 };
@@ -496,7 +519,7 @@ document.getElementById('grantAllBtn').onclick = async () =>
         await processPermissions(app.package,app.permissions,'grant');
     }
     await updateAllStatuses();
-    alert("Operation completed successfully.");
+    alertUi("Operation completed successfully.");
 };
 
 async function processPermissions(pkg, perms, action){
@@ -519,11 +542,12 @@ document.getElementById('revokeSelectedBtn').onclick = async () =>
     const perms = [...document.querySelectorAll('#detailPermsList input[type="checkbox"]:checked')].map(x => x.value);
     if (!perms.length)
     {
-        alert("No permissions selected.");
+        alertUi("No permissions selected.");
         return;
     }
     if (!(await ensureBridgeReady())) return;
     await processPermissions(activeTargetApp.package,perms,'revoke');
+    alertUi(`Permissions successfully processed for ${activeTargetApp.name}`);
     await updateAllStatuses();
     showMainView();
 };
@@ -537,7 +561,7 @@ document.getElementById('revokeAllBtn').onclick = async () =>
         await processPermissions(app.package,app.permissions,'revoke');
     }
     await updateAllStatuses();
-    alert("Operation completed successfully.");
+    alertUi("Operation completed successfully.");
 };
 
 window.onload = init;
