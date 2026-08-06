@@ -1,13 +1,3 @@
-/*
-function setAppHeight()
-{
-    document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
-}
-setAppHeight();
-window.addEventListener('resize', setAppHeight);
-window.addEventListener('orientationchange', () => setTimeout(setAppHeight, 50));
-*/
-
 // Only the permissions listed here are backed by an App Ops check
 // instead of (or in addition to) the dumpsys "granted=" flag.
 // The op name is NOT always the same string as the permission name.

@@ -9,7 +9,10 @@ const APPS_DATA = [
       "android.permission.DUMP",
       "android.permission.READ_LOGS",
       "android.permission.CHANGE_CONFIGURATION",
-      "android.permission.PACKAGE_USAGE_STATS"
+      "android.permission.PACKAGE_USAGE_STATS",
+      "android.permission.SYSTEM_ALERT_WINDOW",
+      "android.permission.SET_VOLUME_KEY_LONG_PRESS_LISTENER",
+      "android.permission.SET_MEDIA_KEY_LISTENER"
     ]
   },
   {
@@ -56,7 +59,8 @@ const APPS_DATA = [
     "icon": "assets/join.png",
     "permissions": [
       "android.permission.WRITE_SECURE_SETTINGS",
-      "android.permission.READ_LOGS"
+      "android.permission.READ_LOGS",
+      "android.permission.SYSTEM_ALERT_WINDOW"
     ]
   }
 ];
