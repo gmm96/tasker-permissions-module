@@ -11,18 +11,7 @@ let appsStatusMap = {};
 let currentFilter = 'all';
 let activeTargetApp = null;
 
-function alertUi(message)
-{
-    const toast = document.getElementById("toast");
-
-    toast.textContent = message;
-    toast.classList.add("show");
-
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => {
-        toast.classList.remove("show");
-    }, 2500);
-}
+// alertUi / confirmUi ahora viven en js/dialogs.js (se cargan antes que este script)
 
 function getCleanPermName(fullPerm)
 {
@@ -510,7 +499,11 @@ document.getElementById('applySelectedBtn').onclick = async () =>
 document.getElementById('grantAllBtn').onclick = async () =>
 {
     if (appsData.length === 0) return;
-    if (!confirm("Are you sure you want to grant all permissions to all applications?")) return;
+    const ok = await confirmUi("Are you sure you want to grant all permissions to all applications?", {
+        title: "Grant all",
+        confirmText: "Grant all"
+    });
+    if (!ok) return;
 
     if (!(await ensureBridgeReady())) return;
 
@@ -554,7 +547,12 @@ document.getElementById('revokeSelectedBtn').onclick = async () =>
 
 document.getElementById('revokeAllBtn').onclick = async () =>
 {
-    if (!confirm("Are you sure you want to revoke all permissions from all applications?")) return;
+    const ok = await confirmUi("Are you sure you want to revoke all permissions from all applications?", {
+        title: "Revoke all",
+        confirmText: "Revoke all",
+        danger: true
+    });
+    if (!ok) return;
     if (!(await ensureBridgeReady())) return;
     for (const app of appsData)
     {
