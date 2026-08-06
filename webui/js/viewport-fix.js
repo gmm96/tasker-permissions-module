@@ -1,14 +1,18 @@
 (function () {
     function applyHeight() {
         var h = window.innerHeight;
-        if (h && h > 0) {
-            document.querySelectorAll('.view-screen.active').forEach(function (el) {
-                el.style.minHeight = h + 'px';
-            });
-        }
+        if (!h || h <= 0) return;
+
+        // Fija también el body: si el fondo oscuro solo llega hasta donde
+        // el WebView "cree" que mide la página, queda un hueco sin pintar
+        // por debajo aunque el contenido interno esté bien colocado.
+        document.body.style.minHeight = h + 'px';
+
+        document.querySelectorAll('.view-screen.active').forEach(function (el) {
+            el.style.minHeight = h + 'px';
+        });
     }
 
-    // Aplicar ya, y en los eventos normales
     applyHeight();
     window.addEventListener('load', applyHeight);
     window.addEventListener('resize', applyHeight);
@@ -16,19 +20,18 @@
         setTimeout(applyHeight, 50);
     });
 
-    // Reintentos durante los primeros segundos: si el WebView de Shevery
-    // redimensiona su contenedor DESPUÉS de que la página ya haya cargado
-    // (algo que sospechamos, dado que ni siquiera Eruda ocupaba toda la
-    // pantalla), esto lo detecta y corrige sin que el usuario note nada.
+    // Reintentos agresivos durante los primeros segundos: si el WebView
+    // de Shevery redimensiona su contenedor DESPUÉS de que la página ya
+    // haya cargado, esto lo detecta y corrige sin que el usuario note nada.
     var tries = 0;
     var iv = setInterval(function () {
         applyHeight();
         tries++;
-        if (tries > 25) clearInterval(iv); // ~7.5s de reintentos cada 300ms
+        if (tries > 40) clearInterval(iv); // ~12s de reintentos cada 300ms
     }, 300);
 
-    // Por si el sitio cambia de vista (mainView <-> detailView) dinámicamente,
-    // reaplicamos también cuando cambia el DOM.
+    // Reaplicar cuando cambia de vista (mainView <-> detailView) o cuando
+    // se repinta contenido dentro de la vista activa (nuevos permisos, etc.)
     var observer = new MutationObserver(applyHeight);
-    observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+    observer.observe(document.body, { attributes: true, childList: true, subtree: true, attributeFilter: ['class'] });
 })();

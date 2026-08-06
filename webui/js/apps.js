@@ -20,5 +20,43 @@ const APPS_DATA = [
     "permissions": [
       "android.permission.WRITE_SECURE_SETTINGS"
     ]
+  },
+  {
+    "id": "autotools",
+    "name": "AutoTools",
+    "package": "com.joaomgcd.autotools",
+    "icon": "assets/autotools.png",
+    "permissions": [
+      "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.CHANGE_CONFIGURATION"
+    ]
+  },
+  {
+    "id": "autoinput",
+    "name": "AutoInput",
+    "package": "com.joaomgcd.autoinput",
+    "icon": "assets/autoinput.png",
+    "permissions": [
+      "android.permission.WRITE_SECURE_SETTINGS"
+    ]
+  },
+  {
+    "id": "autowear",
+    "name": "AutoWear",
+    "package": "com.joaomgcd.autowear",
+    "icon": "assets/autowear.png",
+    "permissions": [
+      "android.permission.WRITE_SECURE_SETTINGS"
+    ]
+  },
+  {
+    "id": "join",
+    "name": "Join",
+    "package": "com.joaomgcd.join",
+    "icon": "assets/join.png",
+    "permissions": [
+      "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.READ_LOGS"
+    ]
   }
 ];

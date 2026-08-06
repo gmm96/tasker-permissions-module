@@ -1,3 +1,4 @@
+/*
 function setAppHeight()
 {
     document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
@@ -5,7 +6,7 @@ function setAppHeight()
 setAppHeight();
 window.addEventListener('resize', setAppHeight);
 window.addEventListener('orientationchange', () => setTimeout(setAppHeight, 50));
-
+*/
 
 // Only the permissions listed here are backed by an App Ops check
 // instead of (or in addition to) the dumpsys "granted=" flag.
@@ -197,10 +198,10 @@ async function inspectAppStatus(app)
 
         if (grantedCount === 0)
         {
-            key = 'no-perms'; text = 'No permissions'; cssClass = 'badge-no-perms';
+            key = 'no-perms'; text = 'None granted'; cssClass = 'badge-no-perms';
         } else if (grantedCount === total)
         {
-            key = 'all-perms'; text = 'All permissions'; cssClass = 'badge-all';
+            key = 'all-perms'; text = 'All granted'; cssClass = 'badge-all';
         }
 
         return { statusKey: key, text, class: cssClass, permsState };
