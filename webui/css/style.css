@@ -76,26 +76,9 @@ h1 {
     font-weight: 700;
 }
 
-.btn-main {
-    width: 100%;
-    padding: 14px;
-    background-color: var(--accent-color);
-    color: var(--text-primary);
-    border: none;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    display: block;
-}
-
-.btn-main:not(:disabled):active {
-    background-color: var(--accent-hover);
-}
-
-.btn-main.btn-danger:not(disabled):active {
-    background-color: var(--danger-hover);
+.bulk-btn-container {
+    display: flex;
+    gap: 10px;
 }
 
 .tabs-container {
@@ -244,7 +227,7 @@ h1 {
     border: 1px dashed var(--border-color);
 }
 
-.badge-no-perms {
+.badge-none-granted {
     background-color: rgba(207, 102, 121, 0.15);
     color: var(--danger-color);
     border: 1px solid var(--danger-color);
@@ -256,7 +239,7 @@ h1 {
     border: 1px solid var(--warning-color);
 }
 
-.badge-all {
+.badge-all-granted {
     background-color: rgba(129, 199, 132, 0.15);
     color: var(--success-color);
     border: 1px solid var(--success-color);
@@ -321,6 +304,10 @@ h1 {
     gap: 14px;
     flex: 1;
     min-width: 0;
+}
+
+.detail-app-info {
+    min-width: calc(100% - 64px);
 }
 
 .detail-icon {
@@ -415,9 +402,8 @@ h1 {
     padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     flex: 1;
     background-color: var(--bg-color);
-    /*height: 100%*/
-    /*-webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
-    mask-image: linear-gradient(to bottom, black 85%, transparent 100%);*/
+    /* -webkit-mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 95%, transparent 100%); */
 }
 
 .perm-card {
@@ -517,27 +503,6 @@ h1 {
     gap: 10px;
 }
 
-
-/*
-.detail-actions {
-    position: sticky;
-    bottom: 16px;
-    z-index: 100;
-    width: 100%;
-    margin: 0 -16px;
-    
-    background-color: var(--card-bg);
-    border-top: 1px solid var(--border-color);
-    
-    padding: 12px 16px;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    
-    display: flex;
-    gap: 10px;
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4); 
-}
-*/
-
 .btn-danger {
     background-color: var(--danger-color);
 }
@@ -556,6 +521,7 @@ h1 {
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 .btn-confirm:not(:disabled):active {
@@ -579,6 +545,51 @@ h1 {
     background: var(--card-bg);
     border-radius: 12px;
     border: 1px solid var(--border-color);
+}
+
+.bridge-debug {
+    display: none;
+    margin-bottom: 16px;
+    font-size: 11px;
+    font-family: monospace;
+    text-align:left;
+}
+
+.footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    padding: 30px 10px 10px 10px;
+}
+
+.footer-logo {
+    width: 32px;
+    height: 32px;
+    display: block;
+    margin: 0 auto 5px auto;
+}
+
+.footer-text {
+    font-size: 12px;
+    margin: 5px 0 0 0;
+}
+
+.footer-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.footer-link:hover {
+    opacity: 0.8;
+    cursor: pointer;
 }
 
 /* ============================================

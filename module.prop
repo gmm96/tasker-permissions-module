@@ -1,8 +1,8 @@
-id=tasker-permissions
-name=Tasker Permissions
+id=hidden-permissions
+name=Hidden Permissions
 version=1.0
 versionCode=1
 author=gmm96
-description=Grant advanced hidden permissions to Tasker, Tasker Settings, and more.
+description=Grant advanced hidden permissions to Android Apps.
 action=action.sh
 webui=true

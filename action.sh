@@ -22,19 +22,16 @@ grant_package_permissions()
     else
         echo "Package NOT installed: $package_id. Skipping.";
     fi
-    echo "-----------------------------------------"
+    echo "-----------------------------------------";
 }
 
 
-echo "========================="
-echo "   Tasker Permissions    "
-echo "========================="
+# ===================================================================
 
-# NOTE: these lists must stay identical to the "permissions" arrays in
-# webui/apps.js. The shell can't import the .js file directly, so any
-# change here has to be mirrored there by hand (and vice versa), or the
-# WebUI will show a different grant status than what this script actually
-# applies.
+
+echo "========================="
+echo "   Hidden Permissions    "
+echo "========================="
 
 # Tasker
 TASKER_PKG="net.dinglisch.android.taskerm";
@@ -44,18 +41,43 @@ android.permission.DUMP
 android.permission.READ_LOGS
 android.permission.CHANGE_CONFIGURATION
 android.permission.PACKAGE_USAGE_STATS
+android.permission.SYSTEM_ALERT_WINDOW
+android.permission.SET_VOLUME_KEY_LONG_PRESS_LISTENER
+android.permission.SET_MEDIA_KEY_LISTENER
 ";
 grant_package_permissions "$TASKER_PKG" $TASKER_PERMS;
 
 # Tasker Settings
-# Only WRITE_SECURE_SETTINGS is documented as needed by this app
-# (see https://github.com/joaomgcd/Tasker-Permissions).
-SETTINGS_PKG="com.joaomgcd.taskersettings";
-SETTINGS_PERMS="
-android.permission.WRITE_SECURE_SETTINGS
-";
-grant_package_permissions "$SETTINGS_PKG" $SETTINGS_PERMS;
+TASKER_SETTINGS_PKG="com.joaomgcd.taskersettings";
+TASKER_SETTINGS_PERMS="android.permission.WRITE_SECURE_SETTINGS";
+grant_package_permissions "$TASKER_SETTINGS_PKG" $TASKER_SETTINGS_PERMS;
 
-# =================================================================
+# Autotools
+AUTOTOOLS_PKG="com.joaomgcd.autotools";
+AUTOTOOLS_PERMS="android.permission.WRITE_SECURE_SETTINGS";
+grant_package_permissions "$AUTOTOOLS_PKG" $AUTOTOOLS_PERMS;
+
+# Autoinput
+AUTOINPUT_PKG="com.joaomgcd.autoinput";
+AUTOINPUT_PERMS="android.permission.WRITE_SECURE_SETTINGS";
+grant_package_permissions "$AUTOINPUT_PKG" $AUTOINPUT_PERMS;
+
+# Autowear
+AUTOWEAR_PKG="com.joaomgcd.autowear";
+AUTOWEAR_PERMS="android.permission.WRITE_SECURE_SETTINGS";
+grant_package_permissions "$AUTOWEAR_PKG" $AUTOWEAR_PERMS;
+
+# Join by joaomgcd
+JOIN_PKG="com.joaomgcd.join";
+JOIN_PERMS="
+    android.permission.READ_LOGS
+    android.permission.SYSTEM_ALERT_WINDOW
+    android.permission.WRITE_SECURE_SETTINGS
+";
+grant_package_permissions "$JOIN_PKG" $JOIN_PERMS;
+
+
+# ===================================================================
+
 
 echo "Finished!";

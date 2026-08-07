@@ -3,7 +3,7 @@ const APPS_DATA = [
     "id": "tasker",
     "name": "Tasker",
     "package": "net.dinglisch.android.taskerm",
-    "icon": "assets/tasker.png",
+    "icon": "tasker.png",
     "permissions": [
       "android.permission.WRITE_SECURE_SETTINGS",
       "android.permission.DUMP",
@@ -19,7 +19,7 @@ const APPS_DATA = [
     "id": "tasker_settings",
     "name": "Tasker Settings",
     "package": "com.joaomgcd.taskersettings",
-    "icon": "assets/tasker_settings.png",
+    "icon": "tasker_settings.png",
     "permissions": [
       "android.permission.WRITE_SECURE_SETTINGS"
     ]
@@ -28,7 +28,7 @@ const APPS_DATA = [
     "id": "autotools",
     "name": "AutoTools",
     "package": "com.joaomgcd.autotools",
-    "icon": "assets/autotools.png",
+    "icon": "autotools.png",
     "permissions": [
       "android.permission.WRITE_SECURE_SETTINGS",
       "android.permission.CHANGE_CONFIGURATION"
@@ -38,7 +38,7 @@ const APPS_DATA = [
     "id": "autoinput",
     "name": "AutoInput",
     "package": "com.joaomgcd.autoinput",
-    "icon": "assets/autoinput.png",
+    "icon": "autoinput.png",
     "permissions": [
       "android.permission.WRITE_SECURE_SETTINGS"
     ]
@@ -47,7 +47,7 @@ const APPS_DATA = [
     "id": "autowear",
     "name": "AutoWear",
     "package": "com.joaomgcd.autowear",
-    "icon": "assets/autowear.png",
+    "icon": "autowear.png",
     "permissions": [
       "android.permission.WRITE_SECURE_SETTINGS"
     ]
@@ -56,7 +56,7 @@ const APPS_DATA = [
     "id": "join",
     "name": "Join",
     "package": "com.joaomgcd.join",
-    "icon": "assets/join.png",
+    "icon": "join.png",
     "permissions": [
       "android.permission.WRITE_SECURE_SETTINGS",
       "android.permission.READ_LOGS",

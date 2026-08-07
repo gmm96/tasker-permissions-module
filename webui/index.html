@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fix=cover">
-    <title>Tasker Permissions</title>
+    <title>Hidden Permissions</title>
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <!--<script>eruda.init();</script>-->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script> -->
 </head>
 <body>
 
@@ -14,24 +14,32 @@
         <div class="container">
             <header>
                 <nav class="tabs-container">
-                    <button class="tab-btn active" data-filter="all">All apps <span class="tab-count" id="count-all">0</span></button>
-                    <button class="tab-btn" data-filter="no-perms">None granted <span class="tab-count" id="count-no-perms">0</span></button>
-                    <button class="tab-btn" data-filter="partial">Partial <span class="tab-count" id="count-partial">0</span></button>
-                    <button class="tab-btn" data-filter="all-perms">All granted <span class="tab-count" id="count-all-perms">0</span></button>
-                    <button class="tab-btn" data-filter="not-installed">Not installed <span class="tab-count" id="count-not-installed">0</span></button>
+                    <button type="button" class="tab-btn active" data-filter="all-apps">All apps <span class="tab-count" id="count-all-apps">0</span></button>
+                    <button type="button" class="tab-btn" data-filter="none-granted">None granted <span class="tab-count" id="count-none-granted">0</span></button>
+                    <button type="button" class="tab-btn" data-filter="partial">Partial <span class="tab-count" id="count-partial">0</span></button>
+                    <button type="button" class="tab-btn" data-filter="all-granted">All granted <span class="tab-count" id="count-all-granted">0</span></button>
+                    <button type="button" class="tab-btn" data-filter="not-installed">Not installed <span class="tab-count" id="count-not-installed">0</span></button>
                 </nav>
 
-                <div id="bridgeDebug" class="empty-message" style="display:none; margin-bottom: 16px; font-size:11px; font-family:monospace; text-align:left;"></div>
+                <div class="empty-message bridge-debug" id="bridgeDebug"></div>
 
-                <div style="display:flex;gap:10px;">
-                    <button class="btn-confirm btn-danger" id="revokeAllBtn" style="flex:1;">Revoke all</button>
-                    <button class="btn-confirm" id="grantAllBtn" style="flex:1;">Grant all</button>
+                <div class="bulk-btn-container">
+                    <button type="button" class="btn-confirm btn-danger" id="revokeAllBtn">Revoke all</button>
+                    <button type="button" class="btn-confirm" id="grantAllBtn">Grant all</button>
                 </div>
             </header>
-            
+
             <main class="list-container" id="appsList">
                 <div class="empty-message">Loading apps...</div>
             </main>
+
+            <div class="footer">
+                <a href="https://github.com/gmm96" target="_blank" class="footer-link">
+                    <img class="footer-logo" src="assets/github.png" alt="GitHub logo">
+                    <p class="footer-text">Hidden Permissions v1.0</p>
+                    <p class="footer-text">by gmm96</p>
+                </a>
+            </div>
         </div>
     </div>
 
@@ -40,16 +48,16 @@
             <div class="detail-sticky-top">
                 <div class="detail-header-card">
                     <div class="detail-top-nav">
-                        <button class="btn-back" id="backBtn">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <button type="button" class="btn-back" id="backBtn" aria-label="Back">
+                            <svg width="24" height="24" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg>
                         </button>
                     </div>
                     <div class="detail-app-meta">
-                        <img id="detailIcon" class="detail-icon" src="" alt="App icon">
-                        <div style="min-width: calc(100% - 64px);">
+                        <img id="detailIcon" class="detail-icon" src="assets/android.png" alt="App icon">
+                        <div class="detail-app-info">
                             <h2 class="detail-title" id="detailTitle">App name</h2>
                             <p class="detail-package" id="detailPackage">Package name</p>
                             <span class="status-badge" id="detailBadge">Status</span>
@@ -60,26 +68,26 @@
                 <div class="section-bar">
                     <p class="section-title">Permissions</p>
                     <div class="perm-select-actions">
-                        <button class="btn-text-action btn-danger" id="deselectAllBtn">Clear all</button>
-                        <button class="btn-text-action" id="selectAllBtn">Select all</button>
+                        <button type="button" class="btn-text-action btn-danger" id="deselectAllBtn">Clear all</button>
+                        <button type="button" class="btn-text-action" id="selectAllBtn">Select all</button>
                     </div>
                 </div>
             </div>
 
-            <div class="perms-list" id="detailPermsList">
-            </div>
+            <div class="perms-list" id="detailPermsList"></div>
 
             <div class="detail-actions">
-                <button class="btn-confirm btn-danger" id="revokeSelectedBtn">Revoke selected</button>
-                <button class="btn-confirm" id="applySelectedBtn">Grant selected</button>
+                <button type="button" class="btn-confirm btn-danger" id="revokeSelectedBtn">Revoke selected</button>
+                <button type="button" class="btn-confirm" id="grantSelectedBtn">Grant selected</button>
             </div>
         </div>
     </div>
-    
+
     <script src="js/viewport-fix.js"></script>
     <script src="js/apps.js"></script>
     <script src="js/permissions.js"></script>
     <script src="js/dialogs.js"></script>
+    <script src="js/shizuku.js"></script>
     <script src="js/manager.js"></script>
 
 </body>
