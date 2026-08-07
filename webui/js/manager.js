@@ -216,6 +216,7 @@ async function init()
     {
         setupTabs();
         renderList();
+        renderMainButtons();
         await updateAllStatuses();
     }
     catch(e)
@@ -307,6 +308,17 @@ function renderList()
     {
         list.innerHTML = '<div class="empty-message">No applications found in this category</div>';
     }
+}
+
+function renderMainButtons()
+{
+    const uiDisabled = Object.values(appsStatusMap).every(statusInfo =>
+        statusInfo.statusKey === 'not-installed' ||
+        statusInfo.statusKey === 'error'
+    );
+    
+    document.getElementById('revokeAllBtn').disabled = uiDisabled;
+    document.getElementById('grantAllBtn').disabled = uiDisabled;
 }
 
 async function updateAllStatuses()
@@ -499,7 +511,7 @@ document.getElementById('applySelectedBtn').onclick = async () =>
 document.getElementById('grantAllBtn').onclick = async () =>
 {
     if (appsData.length === 0) return;
-    const ok = await confirmUi("Are you sure you want to grant all permissions to all applications?", {
+    const ok = await confirmUi("Are you sure you want to grant all permissions to all installed applications?", {
         title: "Grant all",
         confirmText: "Grant all"
     });
@@ -547,7 +559,7 @@ document.getElementById('revokeSelectedBtn').onclick = async () =>
 
 document.getElementById('revokeAllBtn').onclick = async () =>
 {
-    const ok = await confirmUi("Are you sure you want to revoke all permissions from all applications?", {
+    const ok = await confirmUi("Are you sure you want to revoke all permissions from all installed applications?", {
         title: "Revoke all",
         confirmText: "Revoke all",
         danger: true

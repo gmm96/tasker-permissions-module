@@ -394,6 +394,14 @@ h1 {
     color: var(--accent-hover);
 }
 
+.btn-text-action.btn-danger {
+    background: none;
+}
+
+.btn-text-action.btn-danger:not(:disabled):active {
+    color: var(--danger-hover)
+}
+
 .perm-select-actions .btn-text-action:first-child {
     border-right: 1px solid var(--border-color);
 }
@@ -573,27 +581,6 @@ h1 {
     border: 1px solid var(--border-color);
 }
 
-
-.toast {
-    position: fixed;
-    left: 50%;
-    bottom: 24px;
-    transform: translateX(-50%) translateY(20px);
-    background-color: red;
-    color: white;
-    padding: 12px 18px;
-    border-radius: 10px;
-    opacity: 0;
-    transition: opacity .2s, transform .2s;
-    pointer-events: none;
-    z-index: 9999;
-}
-
-.toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-}
-
 /* ============================================
    alertUi / confirmUi — sustituto de alert()/confirm()
    nativos, que no funcionan dentro del WebView.
@@ -628,6 +615,7 @@ h1 {
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
     transform: scale(.94) translateY(8px);
     transition: transform .2s ease;
+    text-align: center;
 }
 
 .ui-modal-overlay.show .ui-modal {
