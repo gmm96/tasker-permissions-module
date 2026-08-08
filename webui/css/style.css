@@ -562,7 +562,10 @@ h1 {
     justify-content: center;
     text-align: center;
     width: 100%;
-    padding: 30px 10px 10px 10px;
+    padding-top: 30px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
 .footer-logo {

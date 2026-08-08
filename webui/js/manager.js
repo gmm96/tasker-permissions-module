@@ -135,7 +135,6 @@ async function init()
     {
         setupTabs();
         renderList();
-        renderMainButtons();
         await updateAllStatuses();
     }
     catch(e)
@@ -228,7 +227,11 @@ function renderList()
 
 function renderMainButtons()
 {
-    const uiDisabled = Object.values(appsStatusMap).every(statusInfo =>
+    const revokeAllDisabled = Object.values(appsStatusMap).every(statusInfo =>
+        statusInfo.statusKey === 'not-installed' ||
+        statusInfo.statusKey === 'error'
+    );
+    const grantAllDisabled = Object.values(appsStatusMap).every(statusInfo =>
         statusInfo.statusKey === 'not-installed' ||
         statusInfo.statusKey === 'error'
     );
@@ -262,7 +265,7 @@ async function updateAllStatuses()
     document.getElementById('count-partial').textContent = counts['partial'];
     document.getElementById('count-all-granted').textContent = counts['all-granted'];
     document.getElementById('count-not-installed').textContent = counts['not-installed'];
-
+    renderMainButtons();
     renderList();
 }
 
