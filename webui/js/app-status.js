@@ -5,6 +5,7 @@ class AppStatus
     static PARTIAL = new AppStatus('PARTIAL');
     static NOTINSTALLED = new AppStatus('NOTINSTALLED');
     static ERROR = new AppStatus('ERROR');
+    static LOADING = new AppStatus('LOADING');
 
     constructor(name)
     {

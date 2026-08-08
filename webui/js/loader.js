@@ -1,11 +1,13 @@
 (function() {
     const scripts = [
-        'js/viewport-fix.js',
         'js/apps.js',
-        'js/permissions.js',
+        'js/app-status.js',
         'js/dialogs.js',
+        'js/manager.js',
+        'js/permissions.js',
+        'js/permission-status.js',
         'js/shizuku.js',
-        'js/manager.js'
+        'js/viewport-fix.js'
     ];
 
     function loadScript(src)
@@ -22,7 +24,11 @@
 
     scripts
         .reduce(
-            (promiseChain, currentScript) => { return promiseChain.then(() => loadScript(currentScript)); },
+            async (promiseChain, currentScript) =>
+            {
+                await promiseChain;
+                return await loadScript(currentScript);
+            },
             Promise.resolve()
         )
         .catch(error => console.error(error));

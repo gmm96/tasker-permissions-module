@@ -8,10 +8,8 @@ const PERMISSION_APPOPS_MAP =
 
 let appsData = (typeof APPS_DATA !== 'undefined') ? APPS_DATA : [];
 let appsStatusMap = {};
-let currentFilter = 'all';
+let currentFilter = 'all-apps';
 let activeTargetApp = null;
-
-// alertUi / confirmUi ahora viven en js/dialogs.js (se cargan antes que este script)
 
 function getCleanPermName(fullPerm)
 {
@@ -23,7 +21,7 @@ function getPermDescription(fullPerm)
     return PERMISSION_INFO[fullPerm] || "";
 }
 
-function getIconFullPath(iconFileName)
+function getAppIconPath(iconFileName)
 {
     return `assets/app_icons/${iconFileName}`;
 }
@@ -69,7 +67,7 @@ async function inspectAppStatus(app)
     if (!bridge)
     {
         showBridgeDebug('No window.Shizuku bridge object found.');
-        return { statusKey: 'error', text: 'Unavailable', class: 'badge-error', permsState: {} };
+        return { statusKey: AppStatus.ERROR, text: 'Unavailable', class: 'badge-error', permsState: {} };
     }
 
     const trustInfo = await getModuleTrustInfo();
@@ -79,7 +77,7 @@ async function inspectAppStatus(app)
             `Module "${trustInfo.id || 'hidden-permissions'}" is not trusted (mode: ${trustInfo.accessMode || 'unknown'}). ` +
             `Long-press this module's card in Shevery/Nightzuku/Shizuku ADB Manager and grant Full Trust / Full Access.`
         );
-        return{ statusKey: 'error', text: 'Module not trusted', class: 'badge-error', permsState: {} };
+        return{ statusKey: AppStatus.ERROR, text: 'Module not trusted', class: 'badge-error', permsState: {} };
     }
 
     try
@@ -88,11 +86,11 @@ async function inspectAppStatus(app)
         if (pkgResult === null)
         {
             showBridgeDebug();
-            return { statusKey: 'error', text: 'Unavailable', class: 'badge-error', permsState: {} };
+            return { statusKey: AppStatus.ERROR, text: 'Unavailable', class: 'badge-error', permsState: {} };
         }
         if (!pkgResult.includes(`package:${app.package}`))
         {
-            return { statusKey: 'not-installed', text: 'Not installed', class: 'badge-not-installed', permsState: {} };
+            return { statusKey: AppStatus.NOTINSTALLED, text: 'Not installed', class: 'badge-not-installed', permsState: {} };
         }
 
         const dumpResult = await executeShell(`dumpsys package ${app.package}`);
@@ -109,15 +107,15 @@ async function inspectAppStatus(app)
         }
 
         const total = app.permissions.length;
-        let key = 'partial'; let text = `Partial (${grantedCount}/${total})`; let cssClass = 'badge-partial';
+        let key = AppStatus.PARTIAL; let text = `Partial (${grantedCount}/${total})`; let cssClass = 'badge-partial';
 
         if (grantedCount === 0)
         {
-            key = 'none-granted'; text = 'None granted'; cssClass = 'badge-none-granted';
+            key = AppStatus.NONEGRANTED; text = 'None granted'; cssClass = 'badge-none-granted';
         }
         else if (grantedCount === total)
         {
-            key = 'all-granted'; text = 'All granted'; cssClass = 'badge-all-granted';
+            key = AppStatus.ALLGRANTED; text = 'All granted'; cssClass = 'badge-all-granted';
         }
 
         return { statusKey: key, text, class: cssClass, permsState };
@@ -125,7 +123,7 @@ async function inspectAppStatus(app)
     catch (e)
     {
         console.error("Error inspecting " + app.id, e);
-        return { statusKey: 'error', text: 'Verification failed', class: 'badge-error', permsState: {} };
+        return { statusKey: AppStatus.ERROR, text: 'Verification failed', class: 'badge-error', permsState: {} };
     }
 }
 
@@ -172,9 +170,9 @@ function renderList()
 
     appsData.forEach(app =>
     {
-        const statusInfo = appsStatusMap[app.id] || { statusKey: 'loading', text: 'Checking...', class: 'badge-loading' };
+        const statusInfo = appsStatusMap[app.id] || { statusKey: AppStatus.LOADING, text: 'Checking...', class: 'badge-loading' };
         
-        if (currentFilter !== 'all' && statusInfo.statusKey !== currentFilter) 
+        if (currentFilter !== 'all-apps' && statusInfo.statusKey !== currentFilter) 
         {
             return;
         }
@@ -189,7 +187,7 @@ function renderList()
 
         const icon = document.createElement('img');
         icon.className = 'app-icon';
-        icon.src = getIconFullPath(app.icon);
+        icon.src = getAppIconPath(app.icon);
         icon.alt = app.name;
         icon.onerror = () => { icon.src = 'assets/android.png'; };
 
@@ -227,17 +225,19 @@ function renderList()
 
 function renderMainButtons()
 {
-    const revokeAllDisabled = Object.values(appsStatusMap).every(statusInfo =>
-        statusInfo.statusKey === 'not-installed' ||
-        statusInfo.statusKey === 'error'
+    const revokeAllBtnDisabled = Object.values(appsStatusMap).every(statusInfo =>
+        statusInfo.statusKey === AppStatus.NOTINSTALLED ||
+        statusInfo.statusKey === AppStatus.ERROR ||
+        statusInfo.statusKey === AppStatus.NONEGRANTED
     );
-    const grantAllDisabled = Object.values(appsStatusMap).every(statusInfo =>
-        statusInfo.statusKey === 'not-installed' ||
-        statusInfo.statusKey === 'error'
+    const grantAllBtnDisabled = Object.values(appsStatusMap).every(statusInfo =>
+        statusInfo.statusKey === AppStatus.NOTINSTALLED ||
+        statusInfo.statusKey === AppStatus.ERROR ||
+        statusInfo.statusKey == AppStatus.ALLGRANTED
     );
     
-    document.getElementById('revokeAllBtn').disabled = uiDisabled;
-    document.getElementById('grantAllBtn').disabled = uiDisabled;
+    document.getElementById('revokeAllBtn').disabled = revokeAllBtnDisabled;
+    document.getElementById('grantAllBtn').disabled = grantAllBtnDisabled;
 }
 
 async function updateAllStatuses()
@@ -277,7 +277,7 @@ function renderDetailContent(app, statusInfo)
     
     document.getElementById('detailTitle').textContent = app.name;
     document.getElementById('detailPackage').textContent = app.package;
-    document.getElementById('detailIcon').src = getIconFullPath(app.icon);
+    document.getElementById('detailIcon').src = getAppIconPath(app.icon);
 
     const badge = document.getElementById('detailBadge');
     badge.className = `status-badge ${statusInfo.class || 'badge-loading'}`;
@@ -343,7 +343,7 @@ function renderDetailContent(app, statusInfo)
 async function openAppDetailView(app)
 {
     activeTargetApp = app;
-    let statusInfo = appsStatusMap[app.id] || { text: 'Checking...', class: 'badge-loading', permsState: {} };
+    let statusInfo = appsStatusMap[app.id] || { key: AppStatus.LOADING, text: 'Checking...', class: 'badge-loading', permsState: {} };
 
     renderDetailContent(app, statusInfo);
     
@@ -351,7 +351,7 @@ async function openAppDetailView(app)
     document.getElementById('detailView').classList.add('active');
     window.scrollTo(0, 0);
 
-    if (!appsStatusMap[app.id] || statusInfo.statusKey === 'loading')
+    if (!appsStatusMap[app.id] || statusInfo.statusKey === AppStatus.LOADING)
     {
         const freshStatus = await inspectAppStatus(app);
         appsStatusMap[app.id] = freshStatus;
