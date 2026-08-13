@@ -122,6 +122,66 @@ h1 {
     font-size: 11px;
 }
 
+/* ============================================
+   SEARCH BAR COMPONENT
+   ============================================ */
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+.detail-search-container {
+    margin-bottom: 8px;
+}
+
+.search-input {
+    width: 100%;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 10px 40px 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-input:focus {
+    border-color: var(--accent-color);
+}
+
+.search-input::placeholder {
+    color: var(--text-secondary);
+}
+
+.search-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 8px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 6px;
+    display: none; /* Oculto por defecto */
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+.clear-search-btn:active {
+    color: var(--text-primary);
+}
+
+/* ============================================ */
+
 .list-container {
     display: flex;
     flex-direction: column;
@@ -246,15 +306,7 @@ h1 {
 }
 
 /* ============================================
-   DETAIL VIEW: columna flex de altura mínima
-   100vh (crece si hace falta más, con scroll
-   NATURAL de página, nada de vh/innerHeight
-   forzando alturas). Cabecera + barra de permisos
-   fijas arriba (sticky), botones fijos abajo
-   (sticky) y empujados al fondo con margin-top:auto
-   cuando la lista es corta. TODAS las capas llevan
-   background-color explícito porque este WebView
-   no repinta bien fondos "heredados" visualmente.
+   DETAIL VIEW
    ============================================ */
 
 .detail-top-nav {
@@ -342,7 +394,7 @@ h1 {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding-bottom: 14px;
+    padding-bottom: 10px;
     flex-wrap: wrap;
 }
 
@@ -402,8 +454,6 @@ h1 {
     padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     flex: 1;
     background-color: var(--bg-color);
-    /* -webkit-mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
-    mask-image: linear-gradient(to bottom, black 95%, transparent 100%); */
 }
 
 .perm-card {
@@ -685,3 +735,52 @@ h1 {
     background-color: var(--danger-color);
 }
 
+
+/* ============================================
+   SPINNER OVERLAY
+   ============================================ */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--accent-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 600;
+}

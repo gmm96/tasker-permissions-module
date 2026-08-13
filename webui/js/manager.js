@@ -1,17 +1,11 @@
-// Only the permissions listed here are backed by an App Ops check
-// instead of (or in addition to) the dumpsys "granted=" flag.
-// The op name is NOT always the same string as the permission name.
-const PERMISSION_APPOPS_MAP =
-{
-    "android.permission.PACKAGE_USAGE_STATS": "GET_USAGE_STATS"
-};
-
 let appsData = (typeof APPS_DATA !== 'undefined') ? APPS_DATA : [];
+appsData.sort((a, b) => a.name.localeCompare(b.name));
 let appsStatusMap = {};
 let currentFilter = 'all-apps';
+let currentSearchQuery = '';
 let activeTargetApp = null;
 
-function getCleanPermName(fullPerm)
+function getPermCleanName(fullPerm)
 {
     return fullPerm.replace(/^android\.permission\./i, '');
 }
@@ -38,26 +32,34 @@ function showBridgeDebug(extraLine)
     el.innerHTML = html;
 }
 
-// Matches a line like "  android.permission.DUMP: granted=true"
-// Requires the ": granted=" suffix on the SAME line as the permission
-// name, so a permission that is merely *requested* (listed under
-// "requested permissions:" with no granted= status at all) is never
-// mistaken for a granted one.
-function isPermissionGrantedInDump(dumpResult, permission) {
+// Control del Spinner
+function showLoadingSpinner(text = 'Processing...') 
+{
+    const overlay = document.getElementById('loadingOverlay');
+    const textEl = document.getElementById('loadingText');
+    if (overlay && textEl) {
+        textEl.textContent = text;
+        overlay.classList.add('active');
+        // Bloquea el scroll del fondo
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function hideLoadingSpinner() 
+{
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+        // Restaura el scroll del fondo
+        document.body.style.overflow = '';
+    }
+}
+
+function isPermissionGrantedInDumpsys(dumpResult, permission) {
     if (!dumpResult) return false;
     const escaped = permission.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const grantedRegex = new RegExp(`^\\s*${escaped}:\\s*granted=true`, 'm');
     return grantedRegex.test(dumpResult);
-}
-
-async function isPermissionGrantedViaAppOps(app, permission)
-{
-    const opName = PERMISSION_APPOPS_MAP[permission];
-    if (!opName) return null; // not an app-ops-backed permission
-    const appOpsResult = await executeShell(`appops get ${app.package} ${opName}`);
-    if (!appOpsResult) return false;
-    // "appops get" prints e.g. "GET_USAGE_STATS: allow" when granted.
-    return /:\s*allow\b/i.test(appOpsResult);
 }
 
 async function inspectAppStatus(app)
@@ -75,7 +77,7 @@ async function inspectAppStatus(app)
     {
         showBridgeDebug(
             `Module "${trustInfo.id || 'hidden-permissions'}" is not trusted (mode: ${trustInfo.accessMode || 'unknown'}). ` +
-            `Long-press this module's card in Shevery/Nightzuku/Shizuku ADB Manager and grant Full Trust / Full Access.`
+            `Long-press this module's card in Shevery/Nightzuku/Shizuku ADB Module Manager and grant Full Trust / Full Access.`
         );
         return{ statusKey: AppStatus.ERROR, text: 'Module not trusted', class: 'badge-error', permsState: {} };
     }
@@ -93,14 +95,13 @@ async function inspectAppStatus(app)
             return { statusKey: AppStatus.NOTINSTALLED, text: 'Not installed', class: 'badge-not-installed', permsState: {} };
         }
 
-        const dumpResult = await executeShell(`dumpsys package ${app.package}`);
+        const dumpsysResult = await executeShell(`dumpsys package ${app.package}`);
         const permsState = {};
         let grantedCount = 0;
 
         for (const permission of app.permissions)
         {
-            const appOpsGranted = await isPermissionGrantedViaAppOps(app, permission);
-            const isGranted = (appOpsGranted !== null) ? appOpsGranted : isPermissionGrantedInDump(dumpResult, permission);
+            const isGranted = isPermissionGrantedInDumpsys(dumpsysResult, permission);
 
             permsState[permission] = isGranted;
             if (isGranted) grantedCount++;
@@ -172,10 +173,19 @@ function renderList()
     {
         const statusInfo = appsStatusMap[app.id] || { statusKey: AppStatus.LOADING, text: 'Checking...', class: 'badge-loading' };
         
-        if (currentFilter !== 'all-apps' && statusInfo.statusKey !== currentFilter) 
+        if (currentFilter !== 'all-apps') 
         {
-            return;
+            const targetStatus = getStatusFromFilter(currentFilter);
+            if (statusInfo.statusKey !== targetStatus) return;
         }
+
+        if (currentSearchQuery)
+        {
+            const nameMatch = app.name.toLowerCase().includes(currentSearchQuery);
+            const pkgMatch = app.package.toLowerCase().includes(currentSearchQuery);
+            if (!nameMatch && !pkgMatch) return;
+        }
+        
         visibleCount++;
 
         const item = document.createElement('div');
@@ -254,9 +264,11 @@ async function updateAllStatuses()
     {
         const status = await inspectAppStatus(app);
         appsStatusMap[app.id] = status;
-        if (counts[status.statusKey] !== undefined)
+        const filterStr = getFilterFromStatus(status.statusKey);
+
+        if (filterStr && counts[filterStr] !== undefined)
         {
-            counts[status.statusKey]++;
+            counts[filterStr]++;
         }
     }
 
@@ -265,6 +277,7 @@ async function updateAllStatuses()
     document.getElementById('count-partial').textContent = counts['partial'];
     document.getElementById('count-all-granted').textContent = counts['all-granted'];
     document.getElementById('count-not-installed').textContent = counts['not-installed'];
+    
     renderMainButtons();
     renderList();
 }
@@ -272,12 +285,16 @@ async function updateAllStatuses()
 function renderDetailContent(app, statusInfo)
 {
     const uiDisabled =
-        statusInfo.statusKey === 'not-installed' ||
-        statusInfo.statusKey === 'error';
+        statusInfo.statusKey === AppStatus.NOTINSTALLED ||
+        statusInfo.statusKey === AppStatus.ERROR;
+    
+    const perms = [...document.querySelectorAll('#detailPermsList input[type="checkbox"]:checked')].map(x => x.value);
     
     document.getElementById('detailTitle').textContent = app.name;
     document.getElementById('detailPackage').textContent = app.package;
-    document.getElementById('detailIcon').src = getAppIconPath(app.icon);
+    const icon = document.getElementById('detailIcon');
+    icon.src = getAppIconPath(app.icon);
+    icon.onerror = () => { icon.src = 'assets/android.png'; };
 
     const badge = document.getElementById('detailBadge');
     badge.className = `status-badge ${statusInfo.class || 'badge-loading'}`;
@@ -289,15 +306,22 @@ function renderDetailContent(app, statusInfo)
     if (!app.permissions || app.permissions.length === 0)
     {
         permListContainer.innerHTML = '<div class="empty-message">No permissions declared for this app</div>';
+        document.getElementById('selectAllBtn').disabled = true;
+        document.getElementById('deselectAllBtn').disabled = true;
+        document.getElementById('detailSearchInput').disabled = true;
+        updateDetailActionButtons();
         return;
     }
 
     document.getElementById('selectAllBtn').disabled = uiDisabled;
     document.getElementById('deselectAllBtn').disabled = uiDisabled;
-    document.getElementById('grantSelectedBtn').disabled = uiDisabled;
-    document.getElementById('revokeSelectedBtn').disabled = uiDisabled;
+    document.getElementById('detailSearchInput').disabled = uiDisabled;
 
-    app.permissions.forEach(perm =>
+    const sortedPermissions = [...app.permissions].sort((a, b) => 
+        getPermCleanName(a).localeCompare(getPermCleanName(b))
+    );
+
+    sortedPermissions.forEach(perm =>
     {
         const isGranted = statusInfo.permsState ? !!statusInfo.permsState[perm] : false;
 
@@ -318,7 +342,7 @@ function renderDetailContent(app, statusInfo)
 
         const nameSpan = document.createElement('span');
         nameSpan.className = 'perm-name';
-        nameSpan.textContent = getCleanPermName(perm);
+        nameSpan.textContent = getPermCleanName(perm);
 
         const tag = document.createElement('span');
         tag.className = `perm-tag ${isGranted ? 'perm-tag-granted' : 'perm-tag-missing'}`;
@@ -338,10 +362,30 @@ function renderDetailContent(app, statusInfo)
         label.appendChild(info);
         permListContainer.appendChild(label);
     });
+
+    // Crear el mensaje oculto de "no hay resultados" para la búsqueda
+    const searchEmptyMsg = document.createElement('div');
+    searchEmptyMsg.id = 'detailEmptyMessage';
+    searchEmptyMsg.className = 'empty-message';
+    searchEmptyMsg.textContent = 'No permissions match your search';
+    searchEmptyMsg.style.display = 'none';
+    permListContainer.appendChild(searchEmptyMsg);
+
+    updateDetailActionButtons();
+    applyDetailFilter();
 }
 
 async function openAppDetailView(app)
 {
+    // Reseteamos el buscador si entramos a una aplicación distinta a la anterior
+    if (!activeTargetApp || activeTargetApp.id !== app.id)
+    {
+        const searchInput = document.getElementById('detailSearchInput');
+        if(searchInput) searchInput.value = '';
+        const clearBtn = document.getElementById('clearDetailSearchBtn');
+        if(clearBtn) clearBtn.style.display = 'none';
+    }
+
     activeTargetApp = app;
     let statusInfo = appsStatusMap[app.id] || { key: AppStatus.LOADING, text: 'Checking...', class: 'badge-loading', permsState: {} };
 
@@ -359,6 +403,81 @@ async function openAppDetailView(app)
         {
             renderDetailContent(app, freshStatus);
         }
+    }
+}
+
+function updateDetailActionButtons()
+{
+    if (!activeTargetApp) return;
+
+    const statusInfo = appsStatusMap[activeTargetApp.id] || {};
+    const uiDisabled = statusInfo.statusKey === AppStatus.NOTINSTALLED || 
+                       statusInfo.statusKey === AppStatus.ERROR;
+
+    const hasChecked = document.querySelectorAll('#detailPermsList input[type="checkbox"]:checked').length > 0;
+
+    document.getElementById('grantSelectedBtn').disabled = uiDisabled || !hasChecked;
+    document.getElementById('revokeSelectedBtn').disabled = uiDisabled || !hasChecked;
+}
+
+function filterDetailPermissions(query)
+{
+    const cards = document.querySelectorAll('#detailPermsList .perm-card');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        const name = card.querySelector('.perm-name').textContent.toLowerCase();
+        const desc = card.querySelector('.perm-desc').textContent.toLowerCase();
+
+        if (name.includes(query) || desc.includes(query)) {
+            card.style.display = 'flex';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    const emptyMsg = document.getElementById('detailEmptyMessage');
+    if (emptyMsg) {
+        if (visibleCount === 0 && cards.length > 0) {
+            emptyMsg.style.display = 'block';
+        } else {
+            emptyMsg.style.display = 'none';
+        }
+    }
+}
+
+function applyDetailFilter()
+{
+    const detailInput = document.getElementById('detailSearchInput');
+    if (detailInput)
+    {
+        const query = (detailInput.value || '').toLowerCase();
+        filterDetailPermissions(query);
+    }
+}
+
+function getStatusFromFilter(filterId)
+{
+    switch (filterId)
+    {
+        case 'none-granted':  return AppStatus.NONEGRANTED;
+        case 'partial':       return AppStatus.PARTIAL;
+        case 'all-granted':   return AppStatus.ALLGRANTED;
+        case 'not-installed': return AppStatus.NOTINSTALLED;
+        default:              return null;
+    }
+}
+
+function getFilterFromStatus(appStatus)
+{
+    switch (appStatus)
+    {
+        case AppStatus.NONEGRANTED:  return 'none-granted';
+        case AppStatus.PARTIAL:      return 'partial';
+        case AppStatus.ALLGRANTED:   return 'all-granted';
+        case AppStatus.NOTINSTALLED: return 'not-installed';
+        default:                     return null;
     }
 }
 
@@ -416,12 +535,22 @@ document.getElementById('grantAllBtn').onclick = async () =>
     if (!ok) return;
 
     if (!(await ensureBridgeReady())) return;
-    for (const app of appsData)
-    {
-        await processPermissions(app.package, app.permissions, 'grant');
+    
+    showLoadingSpinner("Granting all permissions...");
+    
+    // CRÍTICO: Ceder el control al WebView 100ms para pintar el UI antes de colapsar el event loop
+    await new Promise(r => setTimeout(r, 100)); 
+    
+    try {
+        for (const app of appsData)
+        {
+            await processPermissions(app.package, app.permissions, 'grant');
+        }
+        await updateAllStatuses();
+    } finally {
+        hideLoadingSpinner();
     }
-
-    await updateAllStatuses();
+    
     alertUi("All permissions granted successfully.");
 };
 
@@ -440,12 +569,23 @@ document.getElementById('grantSelectedBtn').onclick = async () =>
 
     if (!(await ensureBridgeReady())) return;
 
-    await processPermissions(activeTargetApp.package, selectedPerms, 'grant');
+    // Guardamos el nombre antes de que se limpie la variable global
+    const targetName = activeTargetApp.name;
 
-    alertUi(`Permissions successfully granted to ${activeTargetApp.name}`);
-    await updateAllStatuses();
+    showLoadingSpinner(`Granting permissions to ${targetName}...`);
+    
+    // CRÍTICO: Ceder el control al WebView 100ms
+    await new Promise(r => setTimeout(r, 100)); 
+    
+    try {
+        await processPermissions(activeTargetApp.package, selectedPerms, 'grant');
+        await updateAllStatuses();
+    } finally {
+        hideLoadingSpinner();
+    }
 
     showMainView();
+    alertUi(`Permissions successfully granted to ${targetName}`);
 };
 
 document.getElementById('revokeAllBtn').onclick = async () =>
@@ -459,13 +599,24 @@ document.getElementById('revokeAllBtn').onclick = async () =>
         }
     );
     if (!ok) return;
+    
     if (!(await ensureBridgeReady())) return;
-    for (const app of appsData)
-    {
-        await processPermissions(app.package, app.permissions, 'revoke');
+    
+    showLoadingSpinner("Revoking all permissions...");
+    
+    // CRÍTICO: Ceder el control al WebView 100ms
+    await new Promise(r => setTimeout(r, 100));
+    
+    try {
+        for (const app of appsData)
+        {
+            await processPermissions(app.package, app.permissions, 'revoke');
+        }
+        await updateAllStatuses();
+    } finally {
+        hideLoadingSpinner();
     }
-
-    await updateAllStatuses();
+    
     alertUi("All permissions revoked successfully.");
 };
 
@@ -481,12 +632,24 @@ document.getElementById('revokeSelectedBtn').onclick = async () =>
     }
 
     if (!(await ensureBridgeReady())) return;
-    await processPermissions(activeTargetApp.package, perms, 'revoke');
+    
+    // Guardamos el nombre antes de que se limpie la variable global
+    const targetName = activeTargetApp.name;
 
-    alertUi(`Permissions successfully revoked from ${activeTargetApp.name}`);
-    await updateAllStatuses();
+    showLoadingSpinner(`Revoking permissions from ${targetName}...`);
+    
+    // CRÍTICO: Ceder el control al WebView 100ms
+    await new Promise(r => setTimeout(r, 100));
+    
+    try {
+        await processPermissions(activeTargetApp.package, perms, 'revoke');
+        await updateAllStatuses();
+    } finally {
+        hideLoadingSpinner();
+    }
 
     showMainView();
+    alertUi(`Permissions successfully revoked from ${targetName}`);
 };
 
 function showMainView()
@@ -498,20 +661,94 @@ function showMainView()
 
 document.getElementById('backBtn').onclick = showMainView;
 
+document.getElementById('detailPermsList').addEventListener('change', () =>
+{
+    updateDetailActionButtons();
+});
+
+// Los botones Select All / Clear All ahora sólo aplican a los permisos VISIBLES en la búsqueda
 document.getElementById('selectAllBtn').onclick = () =>
 {
-    const checkboxes = document.querySelectorAll('#detailPermsList input[type="checkbox"]');
-    checkboxes.forEach(cb => cb.checked = true);
+    const cards = document.querySelectorAll('#detailPermsList .perm-card');
+    cards.forEach(card => {
+        if (card.style.display !== 'none') {
+            const cb = card.querySelector('input[type="checkbox"]');
+            if (cb && !cb.disabled) cb.checked = true;
+        }
+    });
+    updateDetailActionButtons();
 };
 
 document.getElementById('deselectAllBtn').onclick = () =>
 {
-    const checkboxes = document.querySelectorAll('#detailPermsList input[type="checkbox"]');
-    checkboxes.forEach(cb => cb.checked = false);
+    const cards = document.querySelectorAll('#detailPermsList .perm-card');
+    cards.forEach(card => {
+        if (card.style.display !== 'none') {
+            const cb = card.querySelector('input[type="checkbox"]');
+            if (cb && !cb.disabled) cb.checked = false;
+        }
+    });
+    updateDetailActionButtons();
 };
+
+// Search listeners para la vista principal
+document.getElementById('searchInput').addEventListener('input', (e) =>
+{
+    currentSearchQuery = e.target.value.toLowerCase();
+    const clearBtn = document.getElementById('clearSearchBtn');
+    
+    if (e.target.value.length > 0)
+    {
+        clearBtn.style.display = 'flex';
+    }
+    else
+    {
+        clearBtn.style.display = 'none';
+    }
+    
+    renderList();
+});
+
+document.getElementById('clearSearchBtn').addEventListener('click', () =>
+{
+    const input = document.getElementById('searchInput');
+    input.value = '';
+    currentSearchQuery = '';
+    document.getElementById('clearSearchBtn').style.display = 'none';
+    
+    renderList();
+    input.focus();
+});
+
+// Search listeners para la vista de detalle
+document.getElementById('detailSearchInput').addEventListener('input', (e) =>
+{
+    const query = e.target.value.toLowerCase();
+    const clearBtn = document.getElementById('clearDetailSearchBtn');
+    
+    if (e.target.value.length > 0)
+    {
+        clearBtn.style.display = 'flex';
+    }
+    else
+    {
+        clearBtn.style.display = 'none';
+    }
+    
+    filterDetailPermissions(query);
+});
+
+document.getElementById('clearDetailSearchBtn').addEventListener('click', () =>
+{
+    const input = document.getElementById('detailSearchInput');
+    input.value = '';
+    document.getElementById('clearDetailSearchBtn').style.display = 'none';
+    
+    filterDetailPermissions('');
+    input.focus();
+});
 
 // #endregion BUTTONS
 ///////////////////////////////////////////////////////////////////////////////
-
 
 window.onload = init;

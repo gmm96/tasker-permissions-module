@@ -9,10 +9,7 @@ const APPS_DATA = [
       "android.permission.DUMP",
       "android.permission.READ_LOGS",
       "android.permission.CHANGE_CONFIGURATION",
-      "android.permission.PACKAGE_USAGE_STATS",
-      "android.permission.SYSTEM_ALERT_WINDOW",
-      "android.permission.SET_VOLUME_KEY_LONG_PRESS_LISTENER",
-      "android.permission.SET_MEDIA_KEY_LISTENER"
+      "android.permission.SET_VOLUME_KEY_LONG_PRESS_LISTENER"
     ]
   },
   {
@@ -31,6 +28,8 @@ const APPS_DATA = [
     "icon": "autotools.png",
     "permissions": [
       "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.DUMP",
+      "android.permission.READ_LOGS",
       "android.permission.CHANGE_CONFIGURATION"
     ]
   },
@@ -59,8 +58,91 @@ const APPS_DATA = [
     "icon": "join.png",
     "permissions": [
       "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.READ_LOGS"
+    ]
+  },
+  {
+    "id": "securetask",
+    "name": "SecureTask",
+    "package": "com.balda.securetask",
+    "icon": "securetask.png",
+    "permissions": [
+      "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.DUMP",
       "android.permission.READ_LOGS",
-      "android.permission.SYSTEM_ALERT_WINDOW"
+      "android.permission.CHANGE_CONFIGURATION"
+    ]
+  },
+  {
+    "id": "secure_settings",
+    "name": "Secure Settings",
+    "package": "com.intangibleobject.securesettings.plugin",
+    "icon": "secure_settings.png",
+    "permissions": [
+      "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.READ_LOGS",
+      "android.permission.CHANGE_CONFIGURATION"
+    ]
+  },
+  {
+    "id": "greenify",
+    "name": "Greenify",
+    "package": "com.oasisfeng.greenify",
+    "icon": "greenify.png",
+    "permissions": [
+      "android.permission.DUMP",
+      "android.permission.READ_LOGS",
+      "android.permission.GET_APP_OPS_STATS",
+      "android.permission.INTERACT_ACROSS_USERS",
+      "android.permission.WRITE_SECURE_SETTINGS"
+    ]
+  },
+  {
+    "id": "systemui_tuner",
+    "name": "SystemUI Tuner",
+    "package": "com.zacharee1.systemuituner",
+    "icon": "systemui_tuner.png",
+    "permissions": [
+      "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.DUMP"
+    ]
+  },
+  {
+    "id": "fluid_navigation_gestures",
+    "name": "Fluid Navigation Gestures",
+    "package": "com.fb.fluid",
+    "icon": "fluid_navigation_gestures.png",
+    "permissions": [
+      "android.permission.WRITE_SECURE_SETTINGS"
+    ]
+  },
+  {
+    "id": "termux",
+    "name": "Termux",
+    "package": "com.termux",
+    "icon": "termux.png",
+    "permissions": [
+      "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.DUMP",
+      "android.permission.READ_LOGS"
+    ]
+  },
+  {
+    "id": "termux_api",
+    "name": "Termux:API",
+    "package": "com.termux.api",
+    "icon": "termux_api.png",
+    "permissions": [
+      "android.permission.DUMP"
+    ]
+  },
+  {
+    "id": "secondscreen",
+    "name": "SecondScreen",
+    "package": "com.farmerbb.secondscreen.free",
+    "icon": "secondscreen.png",
+    "permissions": [
+      "android.permission.WRITE_SECURE_SETTINGS"
     ]
   }
 ];
