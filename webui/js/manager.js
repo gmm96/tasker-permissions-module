@@ -526,28 +526,28 @@ document.getElementById('grantAllBtn').onclick = async () =>
 {
     if (appsData.length === 0) return;
     const ok = await confirmUi(
-        "Are you sure you want to grant all permissions to all installed applications?",
-        {
-            title: "Grant all",
-            confirmText: "Grant all"
-        }
+        "Are you sure you want to grant full permissions to all supported apps?",
+        { title: "Grant all", confirmText: "Grant all" }
     );
     if (!ok) return;
 
     if (!(await ensureBridgeReady())) return;
     
-    showLoadingSpinner("Granting all permissions...");
+    showLoadingSpinner("Granting permissions...");
     
     // CRÍTICO: Ceder el control al WebView 100ms para pintar el UI antes de colapsar el event loop
     await new Promise(r => setTimeout(r, 100)); 
     
-    try {
+    try
+    {
         for (const app of appsData)
         {
             await processPermissions(app.package, app.permissions, 'grant');
         }
         await updateAllStatuses();
-    } finally {
+    }
+    finally
+    {
         hideLoadingSpinner();
     }
     
@@ -569,51 +569,51 @@ document.getElementById('grantSelectedBtn').onclick = async () =>
 
     if (!(await ensureBridgeReady())) return;
 
-    // Guardamos el nombre antes de que se limpie la variable global
     const targetName = activeTargetApp.name;
-
-    showLoadingSpinner(`Granting permissions to ${targetName}...`);
+    showLoadingSpinner(`Granting permissions...`);
     
     // CRÍTICO: Ceder el control al WebView 100ms
     await new Promise(r => setTimeout(r, 100)); 
     
-    try {
+    try
+    {
         await processPermissions(activeTargetApp.package, selectedPerms, 'grant');
         await updateAllStatuses();
-    } finally {
+    }
+    finally
+    {
         hideLoadingSpinner();
     }
 
     showMainView();
-    alertUi(`Permissions successfully granted to ${targetName}`);
+    alertUi(`Permissions successfully granted to <b>${targetName}</b> app.`);
 };
 
 document.getElementById('revokeAllBtn').onclick = async () =>
 {
     const ok = await confirmUi(
-        "Are you sure you want to revoke all permissions from all installed applications?",
-        {
-            title: "Revoke all",
-            confirmText: "Revoke all",
-            danger: true
-        }
+        "Are you sure you want to revoke full permissions from all supported apps?",
+        { title: "Revoke all", confirmText: "Revoke all", danger: true }
     );
     if (!ok) return;
     
     if (!(await ensureBridgeReady())) return;
     
-    showLoadingSpinner("Revoking all permissions...");
+    showLoadingSpinner("Revoking permissions...");
     
     // CRÍTICO: Ceder el control al WebView 100ms
     await new Promise(r => setTimeout(r, 100));
     
-    try {
+    try
+    {
         for (const app of appsData)
         {
             await processPermissions(app.package, app.permissions, 'revoke');
         }
         await updateAllStatuses();
-    } finally {
+    }
+    finally
+    {
         hideLoadingSpinner();
     }
     
@@ -633,23 +633,24 @@ document.getElementById('revokeSelectedBtn').onclick = async () =>
 
     if (!(await ensureBridgeReady())) return;
     
-    // Guardamos el nombre antes de que se limpie la variable global
     const targetName = activeTargetApp.name;
-
-    showLoadingSpinner(`Revoking permissions from ${targetName}...`);
+    showLoadingSpinner(`Revoking permissions...`);
     
     // CRÍTICO: Ceder el control al WebView 100ms
     await new Promise(r => setTimeout(r, 100));
     
-    try {
+    try
+    {
         await processPermissions(activeTargetApp.package, perms, 'revoke');
         await updateAllStatuses();
-    } finally {
+    }
+    finally
+    {
         hideLoadingSpinner();
     }
 
     showMainView();
-    alertUi(`Permissions successfully revoked from ${targetName}`);
+    alertUi(`Permissions successfully revoked from <b>${targetName}</b> app.`);
 };
 
 function showMainView()
@@ -666,12 +667,13 @@ document.getElementById('detailPermsList').addEventListener('change', () =>
     updateDetailActionButtons();
 });
 
-// Los botones Select All / Clear All ahora sólo aplican a los permisos VISIBLES en la búsqueda
 document.getElementById('selectAllBtn').onclick = () =>
 {
     const cards = document.querySelectorAll('#detailPermsList .perm-card');
-    cards.forEach(card => {
-        if (card.style.display !== 'none') {
+    cards.forEach(card =>
+    {
+        if (card.style.display !== 'none')
+        {
             const cb = card.querySelector('input[type="checkbox"]');
             if (cb && !cb.disabled) cb.checked = true;
         }
@@ -682,8 +684,10 @@ document.getElementById('selectAllBtn').onclick = () =>
 document.getElementById('deselectAllBtn').onclick = () =>
 {
     const cards = document.querySelectorAll('#detailPermsList .perm-card');
-    cards.forEach(card => {
-        if (card.style.display !== 'none') {
+    cards.forEach(card =>
+    {
+        if (card.style.display !== 'none')
+        {
             const cb = card.querySelector('input[type="checkbox"]');
             if (cb && !cb.disabled) cb.checked = false;
         }
@@ -691,7 +695,6 @@ document.getElementById('deselectAllBtn').onclick = () =>
     updateDetailActionButtons();
 };
 
-// Search listeners para la vista principal
 document.getElementById('searchInput').addEventListener('input', (e) =>
 {
     currentSearchQuery = e.target.value.toLowerCase();
@@ -720,7 +723,6 @@ document.getElementById('clearSearchBtn').addEventListener('click', () =>
     input.focus();
 });
 
-// Search listeners para la vista de detalle
 document.getElementById('detailSearchInput').addEventListener('input', (e) =>
 {
     const query = e.target.value.toLowerCase();
