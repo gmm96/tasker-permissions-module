@@ -61,7 +61,7 @@
         {
             titleEl.textContent = setup.title || '';
             titleEl.style.display = setup.title ? 'block' : 'none';
-            messageEl.textContent = setup.message || '';
+            messageEl.innerHTML = setup.message || '';
             actionsEl.innerHTML = '';
 
             let settled = false;

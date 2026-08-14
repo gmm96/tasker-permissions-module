@@ -174,4 +174,24 @@ const APPS_DATA =
             "android.permission.WRITE_SECURE_SETTINGS",
         ],
     },
+    {
+        id: "shevery",
+        name: "Shevery",
+        package: "com.hamondev.shevery",
+        icon: "shevery.png",
+        permissions:
+        [
+            "android.permission.WRITE_SECURE_SETTINGS"
+        ],
+    },
+    {
+        id: "nightzuku",
+        name: "Nightzuku",
+        package: "kerneldroid.nightzuku",
+        icon: "nightzuku.png",
+        permissions:
+        [
+            "android.permission.WRITE_SECURE_SETTINGS"
+        ],
+    },
 ];

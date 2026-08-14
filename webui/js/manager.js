@@ -331,7 +331,7 @@ function renderDetailContent(app, statusInfo)
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.value = perm;
-        checkbox.checked = !isGranted;
+        checkbox.checked = !uiDisabled && !isGranted;
         checkbox.disabled = uiDisabled;
 
         const info = document.createElement('div');
