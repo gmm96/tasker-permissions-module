@@ -20,6 +20,30 @@ function getAppIconPath(iconFileName)
     return `assets/app_icons/${iconFileName}`;
 }
 
+function getStatusFromFilter(filterId)
+{
+    const map =
+    {
+        'none-granted': AppStatus.NONEGRANTED,
+        'partial': AppStatus.PARTIAL,
+        'all-granted': AppStatus.ALLGRANTED,
+        'not-installed': AppStatus.NOTINSTALLED
+    };
+    return map[filterId] || null;
+}
+
+function getFilterFromStatus(appStatus)
+{
+    const map =
+    {
+        [AppStatus.NONEGRANTED]: 'none-granted',
+        [AppStatus.PARTIAL]: 'partial',
+        [AppStatus.ALLGRANTED]: 'all-granted',
+        [AppStatus.NOTINSTALLED]: 'not-installed'
+    };
+    return map[appStatus] || null;
+}
+
 function showBridgeDebug(extraLine)
 {
     const el = document.getElementById('bridgeDebug');
@@ -30,29 +54,6 @@ function showBridgeDebug(extraLine)
         : 'No Shizuku shell bridge object found on window.';
     if (extraLine) html = extraLine + '<br><br>' + html;
     el.innerHTML = html;
-}
-
-// Control del Spinner
-function showLoadingSpinner(text = 'Processing...') 
-{
-    const overlay = document.getElementById('loadingOverlay');
-    const textEl = document.getElementById('loadingText');
-    if (overlay && textEl) {
-        textEl.textContent = text;
-        overlay.classList.add('active');
-        // Bloquea el scroll del fondo
-        document.body.style.overflow = 'hidden';
-    }
-}
-
-function hideLoadingSpinner() 
-{
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) {
-        overlay.classList.remove('active');
-        // Restaura el scroll del fondo
-        document.body.style.overflow = '';
-    }
 }
 
 function isPermissionGrantedInDumpsys(dumpResult, permission) {
@@ -128,24 +129,46 @@ async function inspectAppStatus(app)
     }
 }
 
-async function init()
+async function ensureBridgeReady()
 {
-    try
+    const bridge = await tryBridgeCall();
+    if (!bridge)
     {
-        setupTabs();
-        renderList();
-        await updateAllStatuses();
+        showBridgeDebug('No window.Shizuku bridge object found — nothing was granted.');
+        alertUi("Could not reach the Shevery shell bridge — nothing was granted. See the debug info under the header.");
+        return false;
     }
-    catch(e)
+    const trustInfo = await getModuleTrustInfo();
+    if (trustInfo && trustInfo.trusted === false)
     {
-        console.error("Initialization error", e);
-        const list = document.getElementById('appsList');
-        if (list)
+        showBridgeDebug(
+            `Module "${trustInfo.id || 'tasker-permissions'}" is not trusted — nothing was granted. ` +
+            `Long-press this module's card in Shevery and grant Full Trust / Full Access.`
+        );
+        alertUi("This module isn't trusted yet in Shevery — nothing was granted. See the debug info under the header.");
+        return false;
+    }
+    return true;
+}
+
+async function processPermissions(pkg, perms, action)
+{
+    for (const perm of perms)
+    {
+        try
         {
-            list.innerHTML = '<div class="empty-message">Error de inicialización: ' + e.message + '</div>';
+            await executeShell(`pm ${action} ${pkg} ${perm}`);
+        }
+        catch(e)
+        {
+            console.error(`Failed ${action} ${perm} for ${pkg}`, e);
         }
     }
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+// #region MAIN VIEW
 
 function setupTabs()
 {
@@ -235,24 +258,24 @@ function renderList()
 
 function renderMainButtons()
 {
-    const revokeAllBtnDisabled = Object.values(appsStatusMap).every(statusInfo =>
-        statusInfo.statusKey === AppStatus.NOTINSTALLED ||
-        statusInfo.statusKey === AppStatus.ERROR ||
-        statusInfo.statusKey === AppStatus.NONEGRANTED
-    );
-    const grantAllBtnDisabled = Object.values(appsStatusMap).every(statusInfo =>
-        statusInfo.statusKey === AppStatus.NOTINSTALLED ||
-        statusInfo.statusKey === AppStatus.ERROR ||
-        statusInfo.statusKey == AppStatus.ALLGRANTED
-    );
-    
+    let revokeAllBtnDisabled = true;
+    let grantAllBtnDisabled = true;
+
+    for (const statusInfo of Object.values(appsStatusMap))
+    {
+        const actionable = statusInfo.statusKey !== AppStatus.NOTINSTALLED && statusInfo.statusKey !== AppStatus.ERROR;
+        if (actionable && statusInfo.statusKey !== AppStatus.NONEGRANTED) revokeAllBtnDisabled = false;
+        if (actionable && statusInfo.statusKey !== AppStatus.ALLGRANTED) grantAllBtnDisabled = false;
+    }
+
     document.getElementById('revokeAllBtn').disabled = revokeAllBtnDisabled;
     document.getElementById('grantAllBtn').disabled = grantAllBtnDisabled;
 }
 
 async function updateAllStatuses()
 {
-    const counts = {
+    const counts =
+    {
         'all-apps': appsData.length,
         'none-granted': 0,
         'partial': 0,
@@ -281,6 +304,20 @@ async function updateAllStatuses()
     renderMainButtons();
     renderList();
 }
+
+function showMainView()
+{
+    document.getElementById('detailView').classList.remove('active');
+    document.getElementById('mainView').classList.add('active');
+    activeTargetApp = null;
+}
+
+// #endregion MAIN VIEW
+///////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////
+// #region DETAIL VIEW
 
 function renderDetailContent(app, statusInfo)
 {
@@ -363,7 +400,6 @@ function renderDetailContent(app, statusInfo)
         permListContainer.appendChild(label);
     });
 
-    // Crear el mensaje oculto de "no hay resultados" para la búsqueda
     const searchEmptyMsg = document.createElement('div');
     searchEmptyMsg.id = 'detailEmptyMessage';
     searchEmptyMsg.className = 'empty-message';
@@ -377,7 +413,6 @@ function renderDetailContent(app, statusInfo)
 
 async function openAppDetailView(app)
 {
-    // Reseteamos el buscador si entramos a una aplicación distinta a la anterior
     if (!activeTargetApp || activeTargetApp.id !== app.id)
     {
         const searchInput = document.getElementById('detailSearchInput');
@@ -457,92 +492,54 @@ function applyDetailFilter()
     }
 }
 
-function getStatusFromFilter(filterId)
-{
-    switch (filterId)
-    {
-        case 'none-granted':  return AppStatus.NONEGRANTED;
-        case 'partial':       return AppStatus.PARTIAL;
-        case 'all-granted':   return AppStatus.ALLGRANTED;
-        case 'not-installed': return AppStatus.NOTINSTALLED;
-        default:              return null;
-    }
-}
-
-function getFilterFromStatus(appStatus)
-{
-    switch (appStatus)
-    {
-        case AppStatus.NONEGRANTED:  return 'none-granted';
-        case AppStatus.PARTIAL:      return 'partial';
-        case AppStatus.ALLGRANTED:   return 'all-granted';
-        case AppStatus.NOTINSTALLED: return 'not-installed';
-        default:                     return null;
-    }
-}
-
-async function ensureBridgeReady()
-{
-    const bridge = await tryBridgeCall();
-    if (!bridge)
-    {
-        showBridgeDebug('No window.Shizuku bridge object found — nothing was granted.');
-        alertUi("Could not reach the Shevery shell bridge — nothing was granted. See the debug info under the header.");
-        return false;
-    }
-    const trustInfo = await getModuleTrustInfo();
-    if (trustInfo && trustInfo.trusted === false)
-    {
-        showBridgeDebug(
-            `Module "${trustInfo.id || 'tasker-permissions'}" is not trusted — nothing was granted. ` +
-            `Long-press this module's card in Shevery and grant Full Trust / Full Access.`
-        );
-        alertUi("This module isn't trusted yet in Shevery — nothing was granted. See the debug info under the header.");
-        return false;
-    }
-    return true;
-}
-
-async function processPermissions(pkg, perms, action)
-{
-    for (const perm of perms)
-    {
-        try
-        {
-            await executeShell(`pm ${action} ${pkg} ${perm}`);
-        }
-        catch(e)
-        {
-            console.error(`Failed ${action} ${perm} for ${pkg}`, e);
-        }
-    }
-}
+// #endregion DETAIL VIEW
+///////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // #region BUTTONS
 
-document.getElementById('grantAllBtn').onclick = async () =>
+
+// Núcleo común a los 4 botones de conceder/revocar (todos/seleccionados).
+// targets: [{ pkg, perms }, ...] — ya resueltos por el caller, así el
+// "targetName" de los mensajes se captura ANTES de que showMainView()
+// resetee activeTargetApp, igual que en el código original.
+async function runBulkPermissionAction(options)
 {
-    if (appsData.length === 0) return;
-    const ok = await confirmUi(
-        "Are you sure you want to grant full permissions to all supported apps?",
-        { title: "Grant all", confirmText: "Grant all" }
-    );
-    if (!ok) return;
+    const {
+        action,
+        targets,
+        emptyMessage,
+        confirmMessage,
+        confirmOptions,
+        loadingText,
+        successMessage,
+        goBackAfter = false
+    } = options;
+
+    if (!targets || targets.length === 0)
+    {
+        if (emptyMessage) alertUi(emptyMessage);
+        return;
+    }
+
+    if (confirmMessage)
+    {
+        const ok = await confirmUi(confirmMessage, confirmOptions);
+        if (!ok) return;
+    }
 
     if (!(await ensureBridgeReady())) return;
-    
-    showLoadingSpinner("Granting permissions...");
-    
+
+    showLoadingSpinner(loadingText);
     // CRÍTICO: Ceder el control al WebView 100ms para pintar el UI antes de colapsar el event loop
-    await new Promise(r => setTimeout(r, 100)); 
-    
+    await new Promise(r => setTimeout(r, 100));
+
     try
     {
-        for (const app of appsData)
+        for (const target of targets)
         {
-            await processPermissions(app.package, app.permissions, 'grant');
+            await processPermissions(target.pkg, target.perms, action);
         }
         await updateAllStatuses();
     }
@@ -550,115 +547,57 @@ document.getElementById('grantAllBtn').onclick = async () =>
     {
         hideLoadingSpinner();
     }
-    
-    alertUi("All permissions granted successfully.");
-};
 
-document.getElementById('grantSelectedBtn').onclick = async () =>
-{
-    if (!activeTargetApp) return;
-
-    const checkboxes = document.querySelectorAll('#detailPermsList input[type="checkbox"]:checked');
-    const selectedPerms = Array.from(checkboxes).map(cb => cb.value);
-
-    if (selectedPerms.length === 0)
-    {
-        alertUi("No permissions selected to grant.");
-        return;
-    }
-
-    if (!(await ensureBridgeReady())) return;
-
-    const targetName = activeTargetApp.name;
-    showLoadingSpinner(`Granting permissions...`);
-    
-    // CRÍTICO: Ceder el control al WebView 100ms
-    await new Promise(r => setTimeout(r, 100)); 
-    
-    try
-    {
-        await processPermissions(activeTargetApp.package, selectedPerms, 'grant');
-        await updateAllStatuses();
-    }
-    finally
-    {
-        hideLoadingSpinner();
-    }
-
-    showMainView();
-    alertUi(`Permissions successfully granted to <b>${targetName}</b> app.`);
-};
-
-document.getElementById('revokeAllBtn').onclick = async () =>
-{
-    const ok = await confirmUi(
-        "Are you sure you want to revoke full permissions from all supported apps?",
-        { title: "Revoke all", confirmText: "Revoke all", danger: true }
-    );
-    if (!ok) return;
-    
-    if (!(await ensureBridgeReady())) return;
-    
-    showLoadingSpinner("Revoking permissions...");
-    
-    // CRÍTICO: Ceder el control al WebView 100ms
-    await new Promise(r => setTimeout(r, 100));
-    
-    try
-    {
-        for (const app of appsData)
-        {
-            await processPermissions(app.package, app.permissions, 'revoke');
-        }
-        await updateAllStatuses();
-    }
-    finally
-    {
-        hideLoadingSpinner();
-    }
-    
-    alertUi("All permissions revoked successfully.");
-};
-
-document.getElementById('revokeSelectedBtn').onclick = async () =>
-{
-    if (!activeTargetApp) return;
-
-    const perms = [...document.querySelectorAll('#detailPermsList input[type="checkbox"]:checked')].map(x => x.value);
-    if (!perms.length)
-    {
-        alertUi("No permissions selected to revoke.");
-        return;
-    }
-
-    if (!(await ensureBridgeReady())) return;
-    
-    const targetName = activeTargetApp.name;
-    showLoadingSpinner(`Revoking permissions...`);
-    
-    // CRÍTICO: Ceder el control al WebView 100ms
-    await new Promise(r => setTimeout(r, 100));
-    
-    try
-    {
-        await processPermissions(activeTargetApp.package, perms, 'revoke');
-        await updateAllStatuses();
-    }
-    finally
-    {
-        hideLoadingSpinner();
-    }
-
-    showMainView();
-    alertUi(`Permissions successfully revoked from <b>${targetName}</b> app.`);
-};
-
-function showMainView()
-{
-    document.getElementById('detailView').classList.remove('active');
-    document.getElementById('mainView').classList.add('active');
-    activeTargetApp = null;
+    if (goBackAfter) showMainView();
+    alertUi(successMessage);
 }
+
+document.getElementById('grantAllBtn').onclick = () =>
+    runBulkPermissionAction(
+        {
+            action: 'grant',
+            targets: appsData.map(a => ({ pkg: a.package, perms: a.permissions })),
+            confirmMessage: "Are you sure you want to grant full permissions to all supported apps?",
+            confirmOptions: { title: "Grant all", confirmText: "Grant all" },
+            loadingText: "Granting permissions...",
+            successMessage: "All permissions granted successfully."
+        }
+    );
+
+document.getElementById('revokeAllBtn').onclick = () =>
+    runBulkPermissionAction(
+        {
+            action: 'revoke',
+            targets: appsData.map(a => ({ pkg: a.package, perms: a.permissions })),
+            confirmMessage: "Are you sure you want to revoke full permissions from all supported apps?",
+            confirmOptions: { title: "Revoke all", confirmText: "Revoke all", danger: true },
+            loadingText: "Revoking permissions...",
+            successMessage: "All permissions revoked successfully."
+        }
+    );
+
+function runSelectedPermissionAction(action)
+{
+    if (!activeTargetApp) return;
+    const selectedPerms = [...document.querySelectorAll('#detailPermsList input[type="checkbox"]:checked')].map(cb => cb.value);
+    const targetName = activeTargetApp.name;
+
+    const texts = action === 'grant'
+        ? { verb: 'grant', ing: 'Granting', done: 'granted', prep: 'to' }
+        : { verb: 'revoke', ing: 'Revoking', done: 'revoked', prep: 'from' };
+
+    runBulkPermissionAction({
+        action,
+        targets: selectedPerms.length ? [{ pkg: activeTargetApp.package, perms: selectedPerms }] : [],
+        emptyMessage: `No permissions selected to ${texts.verb}.`,
+        loadingText: `${texts.ing} permissions...`,
+        successMessage: `Permissions successfully ${texts.done} ${texts.prep} <b>${targetName}</b> app.`,
+        goBackAfter: true
+    });
+}
+
+document.getElementById('grantSelectedBtn').onclick = () => runSelectedPermissionAction('grant');
+document.getElementById('revokeSelectedBtn').onclick = () => runSelectedPermissionAction('revoke');
 
 document.getElementById('backBtn').onclick = showMainView;
 
@@ -667,90 +606,73 @@ document.getElementById('detailPermsList').addEventListener('change', () =>
     updateDetailActionButtons();
 });
 
-document.getElementById('selectAllBtn').onclick = () =>
+function setAllDetailCheckboxes(checked)
 {
-    const cards = document.querySelectorAll('#detailPermsList .perm-card');
-    cards.forEach(card =>
+    document.querySelectorAll('#detailPermsList .perm-card').forEach(card =>
     {
-        if (card.style.display !== 'none')
-        {
-            const cb = card.querySelector('input[type="checkbox"]');
-            if (cb && !cb.disabled) cb.checked = true;
-        }
+        if (card.style.display === 'none') return;
+        const cb = card.querySelector('input[type="checkbox"]');
+        if (cb && !cb.disabled) cb.checked = checked;
     });
     updateDetailActionButtons();
-};
+}
 
-document.getElementById('deselectAllBtn').onclick = () =>
+document.getElementById('selectAllBtn').onclick = () => setAllDetailCheckboxes(true);
+document.getElementById('deselectAllBtn').onclick = () => setAllDetailCheckboxes(false);
+
+function wireSearchInput(inputId, clearBtnId, onChange)
 {
-    const cards = document.querySelectorAll('#detailPermsList .perm-card');
-    cards.forEach(card =>
+    const input = document.getElementById(inputId);
+    const clearBtn = document.getElementById(clearBtnId);
+    if (!input || !clearBtn) return;
+
+    input.addEventListener('input', (e) =>
     {
-        if (card.style.display !== 'none')
-        {
-            const cb = card.querySelector('input[type="checkbox"]');
-            if (cb && !cb.disabled) cb.checked = false;
-        }
+        clearBtn.style.display = e.target.value.length > 0 ? 'flex' : 'none';
+        onChange(e.target.value.toLowerCase());
     });
-    updateDetailActionButtons();
-};
 
-document.getElementById('searchInput').addEventListener('input', (e) =>
-{
-    currentSearchQuery = e.target.value.toLowerCase();
-    const clearBtn = document.getElementById('clearSearchBtn');
-    
-    if (e.target.value.length > 0)
+    clearBtn.addEventListener('click', () =>
     {
-        clearBtn.style.display = 'flex';
-    }
-    else
-    {
+        input.value = '';
         clearBtn.style.display = 'none';
-    }
-    
+        onChange('');
+        input.focus();
+    });
+}
+
+wireSearchInput('searchInput', 'clearSearchBtn', (query) =>
+{
+    currentSearchQuery = query;
     renderList();
 });
 
-document.getElementById('clearSearchBtn').addEventListener('click', () =>
+wireSearchInput('detailSearchInput', 'clearDetailSearchBtn', (query) =>
 {
-    const input = document.getElementById('searchInput');
-    input.value = '';
-    currentSearchQuery = '';
-    document.getElementById('clearSearchBtn').style.display = 'none';
-    
-    renderList();
-    input.focus();
-});
-
-document.getElementById('detailSearchInput').addEventListener('input', (e) =>
-{
-    const query = e.target.value.toLowerCase();
-    const clearBtn = document.getElementById('clearDetailSearchBtn');
-    
-    if (e.target.value.length > 0)
-    {
-        clearBtn.style.display = 'flex';
-    }
-    else
-    {
-        clearBtn.style.display = 'none';
-    }
-    
     filterDetailPermissions(query);
-});
-
-document.getElementById('clearDetailSearchBtn').addEventListener('click', () =>
-{
-    const input = document.getElementById('detailSearchInput');
-    input.value = '';
-    document.getElementById('clearDetailSearchBtn').style.display = 'none';
-    
-    filterDetailPermissions('');
-    input.focus();
 });
 
 // #endregion BUTTONS
 ///////////////////////////////////////////////////////////////////////////////
+
+
+async function init()
+{
+    try
+    {
+        setupTabs();
+        renderList();
+        await updateAllStatuses();
+    }
+    catch(e)
+    {
+        console.error("Initialization error", e);
+        const list = document.getElementById('appsList');
+        if (list)
+        {
+            list.innerHTML = '<div class="empty-message">Error de inicialización: ' + e.message + '</div>';
+        }
+    }
+}
 
 window.onload = init;

@@ -1,13 +1,15 @@
 (function() {
-    const scripts = [
-        'js/apps.js',
-        'js/app-status.js',
-        'js/dialogs.js',
-        'js/manager.js',
-        'js/permissions.js',
-        'js/permission-status.js',
+    const scripts =
+    [
+        'js/data/apps.js',
+        'js/data/permissions.js',
+        'js/enum/app-status.js',
+        'js/enum/permission-status.js',
+        'js/ui/dialogs.js',
+        'js/ui/spinner.js',
+        'js/ui/viewport-fix.js',
         'js/shizuku.js',
-        'js/viewport-fix.js'
+        'js/manager.js'
     ];
 
     function loadScript(src)
