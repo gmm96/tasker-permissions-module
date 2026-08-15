@@ -1,7 +1,7 @@
 let appsData = (typeof APPS_DATA !== 'undefined') ? APPS_DATA : [];
 appsData.sort((a, b) => a.name.localeCompare(b.name));
 let appsStatusMap = {};
-let currentFilter = 'all-apps';
+let currentTab = TabStatus.ALLAPPS;
 let currentSearchQuery = '';
 let activeTargetApp = null;
 
@@ -24,10 +24,10 @@ function getStatusFromFilter(filterId)
 {
     const map =
     {
-        'none-granted': AppStatus.NONEGRANTED,
-        'partial': AppStatus.PARTIAL,
-        'all-granted': AppStatus.ALLGRANTED,
-        'not-installed': AppStatus.NOTINSTALLED
+        [TabStatus.NONEGRANTED]: AppStatus.NONEGRANTED,
+        [TabStatus.PARTIAL]: AppStatus.PARTIAL,
+        [TabStatus.ALLGRANTED]: AppStatus.ALLGRANTED,
+        [TabStatus.NOTINSTALLED]: AppStatus.NOTINSTALLED
     };
     return map[filterId] || null;
 }
@@ -36,10 +36,10 @@ function getFilterFromStatus(appStatus)
 {
     const map =
     {
-        [AppStatus.NONEGRANTED]: 'none-granted',
-        [AppStatus.PARTIAL]: 'partial',
-        [AppStatus.ALLGRANTED]: 'all-granted',
-        [AppStatus.NOTINSTALLED]: 'not-installed'
+        [AppStatus.NONEGRANTED]: TabStatus.NONEGRANTED,
+        [AppStatus.PARTIAL]: TabStatus.PARTIAL,
+        [AppStatus.ALLGRANTED]: TabStatus.ALLGRANTED,
+        [AppStatus.NOTINSTALLED]: TabStatus.NOTINSTALLED
     };
     return map[appStatus] || null;
 }
@@ -179,7 +179,7 @@ function setupTabs()
         {
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
-            currentFilter = tab.getAttribute('data-filter');
+            currentTab = tab.getAttribute('data-filter');
             renderList();
         };
     });
@@ -196,9 +196,9 @@ function renderList()
     {
         const statusInfo = appsStatusMap[app.id] || { statusKey: AppStatus.LOADING, text: 'Checking...', class: 'badge-loading' };
         
-        if (currentFilter !== 'all-apps') 
+        if (currentTab !== TabStatus.ALLAPPS) 
         {
-            const targetStatus = getStatusFromFilter(currentFilter);
+            const targetStatus = getStatusFromFilter(currentTab);
             if (statusInfo.statusKey !== targetStatus) return;
         }
 
@@ -276,11 +276,11 @@ async function updateAllStatuses()
 {
     const counts =
     {
-        'all-apps': appsData.length,
-        'none-granted': 0,
-        'partial': 0,
-        'all-granted': 0,
-        'not-installed': 0
+        [TabStatus.ALLAPPS]: appsData.length,
+        [TabStatus.NONEGRANTED]: 0,
+        [TabStatus.PARTIAL]: 0,
+        [TabStatus.ALLGRANTED]: 0,
+        [TabStatus.NOTINSTALLED]: 0
     };
 
     for (const app of appsData)
