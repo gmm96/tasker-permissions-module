@@ -1,11 +1,11 @@
 class AppStatus
 {
-    static ALLGRANTED = new AppStatus('ALLGRANTED');
-    static NONEGRANTED = new AppStatus('NONEGRANTED');
-    static PARTIAL = new AppStatus('PARTIAL');
-    static NOTINSTALLED = new AppStatus('NOTINSTALLED');
-    static ERROR = new AppStatus('ERROR');
-    static LOADING = new AppStatus('LOADING');
+    static ALLGRANTED = new AppStatus('all-granted');
+    static NONEGRANTED = new AppStatus('none-granted');
+    static PARTIAL = new AppStatus('partial');
+    static NOTINSTALLED = new AppStatus('not-installed');
+    static ERROR = new AppStatus('error');
+    static LOADING = new AppStatus('loading');
 
     constructor(name)
     {
@@ -15,6 +15,6 @@ class AppStatus
 
     toString()
     {
-        return `Status.${this.name}`;
+        return `AppStatus.${this.name}`;
     }
 }

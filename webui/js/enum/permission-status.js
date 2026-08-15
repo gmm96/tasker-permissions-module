@@ -1,7 +1,7 @@
 class PermissionStatus
 {
-    static GRANTED = new Status('GRANTED');
-    static NOTGRANTED = new Status('NOTGRANTED');
+    static GRANTED = new Status('granted');
+    static NOTGRANTED = new Status('not-granted');
 
     constructor(name)
     {
@@ -11,6 +11,6 @@ class PermissionStatus
 
     toString()
     {
-        return `Status.${this.name}`;
+        return `PermissionStatus.${this.name}`;
     }
 }

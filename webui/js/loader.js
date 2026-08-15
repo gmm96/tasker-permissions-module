@@ -1,4 +1,5 @@
-(function() {
+(function()
+{
     const scripts =
     [
         'js/data/apps.js',
@@ -19,7 +20,7 @@
             const script = document.createElement('script');
             script.src = src;
             script.onload = resolve;
-            script.onerror = () => reject(new Error(`Error loading: ${src}`));
+            script.onerror = () => reject(new Error(`Error loading script: ${src}`));
             document.head.appendChild(script);
         });
     }
