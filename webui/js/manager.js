@@ -5,43 +5,9 @@ let currentTab = TabStatus.ALLAPPS;
 let currentSearchQuery = '';
 let activeTargetApp = null;
 
-function getPermCleanName(fullPerm)
-{
-    return fullPerm.replace(/^android\.permission\./i, '');
-}
-
-function getPermDescription(fullPerm)
-{
-    return PERMISSION_INFO[fullPerm] || "";
-}
-
 function getAppIconPath(iconFileName)
 {
     return `assets/app_icons/${iconFileName}`;
-}
-
-function getStatusFromFilter(filterId)
-{
-    const map =
-    {
-        [TabStatus.NONEGRANTED]: AppStatus.NONEGRANTED,
-        [TabStatus.PARTIAL]: AppStatus.PARTIAL,
-        [TabStatus.ALLGRANTED]: AppStatus.ALLGRANTED,
-        [TabStatus.NOTINSTALLED]: AppStatus.NOTINSTALLED
-    };
-    return map[filterId] || null;
-}
-
-function getFilterFromStatus(appStatus)
-{
-    const map =
-    {
-        [AppStatus.NONEGRANTED]: TabStatus.NONEGRANTED,
-        [AppStatus.PARTIAL]: TabStatus.PARTIAL,
-        [AppStatus.ALLGRANTED]: TabStatus.ALLGRANTED,
-        [AppStatus.NOTINSTALLED]: TabStatus.NOTINSTALLED
-    };
-    return map[appStatus] || null;
 }
 
 function showBridgeDebug(extraLine)
@@ -56,7 +22,8 @@ function showBridgeDebug(extraLine)
     el.innerHTML = html;
 }
 
-function isPermissionGrantedInDumpsys(dumpResult, permission) {
+function isPermissionGrantedInDumpsys(dumpResult, permission)
+{
     if (!dumpResult) return false;
     const escaped = permission.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const grantedRegex = new RegExp(`^\\s*${escaped}:\\s*granted=true`, 'm');
@@ -198,8 +165,8 @@ function renderList()
         
         if (currentTab !== TabStatus.ALLAPPS) 
         {
-            const targetStatus = getStatusFromFilter(currentTab);
-            if (statusInfo.statusKey !== targetStatus) return;
+            const targetAppStatus = StatusMapper.toAppStatus(currentTab);
+            if (statusInfo.statusKey !== targetAppStatus) return;
         }
 
         if (currentSearchQuery)
@@ -287,19 +254,15 @@ async function updateAllStatuses()
     {
         const status = await inspectAppStatus(app);
         appsStatusMap[app.id] = status;
-        const filterStr = getFilterFromStatus(status.statusKey);
+        const tabStatus = StatusMapper.toTabStatus(status.statusKey);
 
-        if (filterStr && counts[filterStr] !== undefined)
-        {
-            counts[filterStr]++;
-        }
+        if (tabStatus && counts[tabStatus] !== undefined) counts[tabStatus]++;
     }
 
-    document.getElementById('count-all-apps').textContent = counts['all-apps'];
-    document.getElementById('count-none-granted').textContent = counts['none-granted'];
-    document.getElementById('count-partial').textContent = counts['partial'];
-    document.getElementById('count-all-granted').textContent = counts['all-granted'];
-    document.getElementById('count-not-installed').textContent = counts['not-installed'];
+    for (const tab of Object.values(TabStatus))
+    {
+        document.getElementById(`count-${tab}`).textContent = counts[tab];
+    }
     
     renderMainButtons();
     renderList();
@@ -354,20 +317,20 @@ function renderDetailContent(app, statusInfo)
     document.getElementById('deselectAllBtn').disabled = uiDisabled;
     document.getElementById('detailSearchInput').disabled = uiDisabled;
 
-    const sortedPermissions = [...app.permissions].sort((a, b) => 
-        getPermCleanName(a).localeCompare(getPermCleanName(b))
-    );
+    const permissionObjects = app.permissions
+        .map(permString => new Permission(permString, PERMISSION_INFO[permString]))
+        .sort((a, b) => a.cleanName.localeCompare(b.cleanName));
 
-    sortedPermissions.forEach(perm =>
+    permissionObjects.forEach(permission =>
     {
-        const isGranted = statusInfo.permsState ? !!statusInfo.permsState[perm] : false;
+        const isGranted = statusInfo.permsState ? !!statusInfo.permsState[permission.rawName] : false;
 
         const label = document.createElement('label');
         label.className = 'perm-card';
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.value = perm;
+        checkbox.value = permission.rawName;
         checkbox.checked = !uiDisabled && !isGranted;
         checkbox.disabled = uiDisabled;
 
@@ -379,7 +342,7 @@ function renderDetailContent(app, statusInfo)
 
         const nameSpan = document.createElement('span');
         nameSpan.className = 'perm-name';
-        nameSpan.textContent = getPermCleanName(perm);
+        nameSpan.textContent = permission.cleanName;
 
         const tag = document.createElement('span');
         tag.className = `perm-tag ${isGranted ? 'perm-tag-granted' : 'perm-tag-missing'}`;
@@ -390,7 +353,7 @@ function renderDetailContent(app, statusInfo)
 
         const descSpan = document.createElement('p');
         descSpan.className = 'perm-desc';
-        descSpan.textContent = getPermDescription(perm);
+        descSpan.textContent = permission.description;
 
         info.appendChild(cardHeader);
         info.appendChild(descSpan);
@@ -670,7 +633,7 @@ async function init()
         const list = document.getElementById('appsList');
         if (list)
         {
-            list.innerHTML = '<div class="empty-message">Error de inicialización: ' + e.message + '</div>';
+            list.innerHTML = '<div class="empty-message">Initialization error: ' + e.message + '</div>';
         }
     }
 }

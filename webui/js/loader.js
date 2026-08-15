@@ -4,8 +4,11 @@
     [
         'js/data/apps.js',
         'js/data/permissions.js',
+        'js/models/permission.js',
         'js/enum/app-status.js',
         'js/enum/permission-status.js',
+        'js/enum/tab-status.js',
+        'js/services/status-mapper.js',
         'js/ui/dialogs.js',
         'js/ui/spinner.js',
         'js/ui/viewport-fix.js',
