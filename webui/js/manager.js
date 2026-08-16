@@ -37,7 +37,7 @@ async function inspectAppStatus(app)
     if (!bridge)
     {
         showBridgeDebug('No window.Shizuku bridge object found.');
-        return { statusKey: AppStatus.ERROR, text: 'Unavailable', class: 'badge-error', permsState: {} };
+        return AppState(AppStatus.ERROR, 'Unavailable', 'badge-error', {});
     }
 
     const trustInfo = await getModuleTrustInfo();
@@ -47,7 +47,7 @@ async function inspectAppStatus(app)
             `Module "${trustInfo.id || 'hidden-permissions'}" is not trusted (mode: ${trustInfo.accessMode || 'unknown'}). ` +
             `Long-press this module's card in Shevery/Nightzuku/Shizuku ADB Module Manager and grant Full Trust / Full Access.`
         );
-        return{ statusKey: AppStatus.ERROR, text: 'Module not trusted', class: 'badge-error', permsState: {} };
+        return AppState(AppStatus.ERROR, 'Module not trusted', 'badge-error', {});
     }
 
     try
@@ -56,11 +56,11 @@ async function inspectAppStatus(app)
         if (pkgResult === null)
         {
             showBridgeDebug();
-            return { statusKey: AppStatus.ERROR, text: 'Unavailable', class: 'badge-error', permsState: {} };
+            return AppState(AppStatus.ERROR, 'Unavailable', 'badge-error', {});
         }
         if (!pkgResult.includes(`package:${app.package}`))
         {
-            return { statusKey: AppStatus.NOTINSTALLED, text: 'Not installed', class: 'badge-not-installed', permsState: {} };
+            return AppState(AppStatus.NOTINSTALLED, 'Not installed', 'badge-not-installed', {});
         }
 
         const dumpsysResult = await executeShell(`dumpsys package ${app.package}`);
@@ -76,23 +76,23 @@ async function inspectAppStatus(app)
         }
 
         const total = app.permissions.length;
-        let key = AppStatus.PARTIAL; let text = `Partial (${grantedCount}/${total})`; let cssClass = 'badge-partial';
+        let status = AppStatus.PARTIAL; let text = `Partial (${grantedCount}/${total})`; let cssClass = 'badge-partial';
 
         if (grantedCount === 0)
         {
-            key = AppStatus.NONEGRANTED; text = 'None granted'; cssClass = 'badge-none-granted';
+            status = AppStatus.NONEGRANTED; text = 'None granted'; cssClass = 'badge-none-granted';
         }
         else if (grantedCount === total)
         {
-            key = AppStatus.ALLGRANTED; text = 'All granted'; cssClass = 'badge-all-granted';
+            status = AppStatus.ALLGRANTED; text = 'All granted'; cssClass = 'badge-all-granted';
         }
 
-        return { statusKey: key, text, class: cssClass, permsState };
+        return AppState(status, text, cssClass, permsState);
     }
     catch (e)
     {
         console.error("Error inspecting " + app.id, e);
-        return { statusKey: AppStatus.ERROR, text: 'Verification failed', class: 'badge-error', permsState: {} };
+        return AppState(AppStatus.ERROR, 'Verification failed', 'badge-error', {});
     }
 }
 
