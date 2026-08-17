@@ -1,6 +1,6 @@
-let appsData = (typeof APPS_DATA !== 'undefined') ? APPS_DATA : [];
-appsData.sort((a, b) => a.name.localeCompare(b.name));
-let appsStatusMap = {};
+let appStore = (typeof APP_STORE !== 'undefined') ? APP_STORE : [];
+appStore.sort((a, b) => a.name.localeCompare(b.name));
+let appModelDict = {};
 let currentTab = TabStatus.ALLAPPS;
 let currentSearchQuery = '';
 let activeTargetApp = null;
@@ -30,14 +30,14 @@ function isPermissionGrantedInDumpsys(dumpResult, permission)
     return grantedRegex.test(dumpResult);
 }
 
-async function inspectAppStatus(app)
+async function evalAppModel(app)
 {
     const bridge = await tryBridgeCall();
 
     if (!bridge)
     {
         showBridgeDebug('No window.Shizuku bridge object found.');
-        return AppState(AppStatus.ERROR, 'Unavailable', 'badge-error', {});
+        return new AppModel(AppStatus.ERROR, 'Unavailable', 'badge-error', {});
     }
 
     const trustInfo = await getModuleTrustInfo();
@@ -47,7 +47,7 @@ async function inspectAppStatus(app)
             `Module "${trustInfo.id || 'hidden-permissions'}" is not trusted (mode: ${trustInfo.accessMode || 'unknown'}). ` +
             `Long-press this module's card in Shevery/Nightzuku/Shizuku ADB Module Manager and grant Full Trust / Full Access.`
         );
-        return AppState(AppStatus.ERROR, 'Module not trusted', 'badge-error', {});
+        return new AppModel(AppStatus.ERROR, 'Module not trusted', 'badge-error', {});
     }
 
     try
@@ -56,11 +56,11 @@ async function inspectAppStatus(app)
         if (pkgResult === null)
         {
             showBridgeDebug();
-            return AppState(AppStatus.ERROR, 'Unavailable', 'badge-error', {});
+            return new AppModel(AppStatus.ERROR, 'Unavailable', 'badge-error', {});
         }
         if (!pkgResult.includes(`package:${app.package}`))
         {
-            return AppState(AppStatus.NOTINSTALLED, 'Not installed', 'badge-not-installed', {});
+            return new AppModel(AppStatus.NOTINSTALLED, 'Not installed', 'badge-not-installed', {});
         }
 
         const dumpsysResult = await executeShell(`dumpsys package ${app.package}`);
@@ -87,12 +87,12 @@ async function inspectAppStatus(app)
             status = AppStatus.ALLGRANTED; text = 'All granted'; cssClass = 'badge-all-granted';
         }
 
-        return AppState(status, text, cssClass, permsState);
+        return new AppModel(status, text, cssClass, permsState);
     }
     catch (e)
     {
         console.error("Error inspecting " + app.id, e);
-        return AppState(AppStatus.ERROR, 'Verification failed', 'badge-error', {});
+        return new AppModel(AppStatus.ERROR, 'Verification failed', 'badge-error', {});
     }
 }
 
@@ -159,14 +159,14 @@ function renderList()
     list.innerHTML = '';
     let visibleCount = 0;
 
-    appsData.forEach(app =>
+    appStore.forEach(app =>
     {
-        const statusInfo = appsStatusMap[app.id] || { statusKey: AppStatus.LOADING, text: 'Checking...', class: 'badge-loading' };
+        const appModel = appModelDict[app.id] || new AppModel(AppStatus.LOADING, 'Checking...', 'badge-loading', {});
         
         if (currentTab !== TabStatus.ALLAPPS) 
         {
             const targetAppStatus = StatusMapper.toAppStatus(currentTab);
-            if (statusInfo.statusKey !== targetAppStatus) return;
+            if (appModel.status !== targetAppStatus) return;
         }
 
         if (currentSearchQuery)
@@ -209,8 +209,8 @@ function renderList()
         leftSec.appendChild(info);
 
         const badge = document.createElement('span');
-        badge.className = `status-badge ${statusInfo.class}`;
-        badge.textContent = statusInfo.text;
+        badge.className = `status-badge ${appModel.cssClass}`;
+        badge.textContent = appModel.text;
 
         item.appendChild(leftSec);
         item.appendChild(badge);
@@ -228,11 +228,11 @@ function renderMainButtons()
     let revokeAllBtnDisabled = true;
     let grantAllBtnDisabled = true;
 
-    for (const statusInfo of Object.values(appsStatusMap))
+    for (const appModel of Object.values(appModelDict))
     {
-        const actionable = statusInfo.statusKey !== AppStatus.NOTINSTALLED && statusInfo.statusKey !== AppStatus.ERROR;
-        if (actionable && statusInfo.statusKey !== AppStatus.NONEGRANTED) revokeAllBtnDisabled = false;
-        if (actionable && statusInfo.statusKey !== AppStatus.ALLGRANTED) grantAllBtnDisabled = false;
+        const actionable = appModel.status !== AppStatus.NOTINSTALLED && appModel.status !== AppStatus.ERROR;
+        if (actionable && appModel.status !== AppStatus.NONEGRANTED) revokeAllBtnDisabled = false;
+        if (actionable && appModel.status !== AppStatus.ALLGRANTED) grantAllBtnDisabled = false;
     }
 
     document.getElementById('revokeAllBtn').disabled = revokeAllBtnDisabled;
@@ -243,18 +243,18 @@ async function updateAllStatuses()
 {
     const counts =
     {
-        [TabStatus.ALLAPPS]: appsData.length,
+        [TabStatus.ALLAPPS]: appStore.length,
         [TabStatus.NONEGRANTED]: 0,
         [TabStatus.PARTIAL]: 0,
         [TabStatus.ALLGRANTED]: 0,
         [TabStatus.NOTINSTALLED]: 0
     };
 
-    for (const app of appsData)
+    for (const app of appStore)
     {
-        const status = await inspectAppStatus(app);
-        appsStatusMap[app.id] = status;
-        const tabStatus = StatusMapper.toTabStatus(status.statusKey);
+        const appModel = await evalAppModel(app);
+        appModelDict[app.id] = appModel;
+        const tabStatus = StatusMapper.toTabStatus(appModel.status);
 
         if (tabStatus && counts[tabStatus] !== undefined) counts[tabStatus]++;
     }
@@ -282,11 +282,9 @@ function showMainView()
 ///////////////////////////////////////////////////////////////////////////////
 // #region DETAIL VIEW
 
-function renderDetailContent(app, statusInfo)
+function renderDetailContent(app, appModel)
 {
-    const uiDisabled =
-        statusInfo.statusKey === AppStatus.NOTINSTALLED ||
-        statusInfo.statusKey === AppStatus.ERROR;
+    const uiDisabled = appModel.status === AppStatus.NOTINSTALLED || appModel.status === AppStatus.ERROR;
     
     const perms = [...document.querySelectorAll('#detailPermsList input[type="checkbox"]:checked')].map(x => x.value);
     
@@ -297,8 +295,8 @@ function renderDetailContent(app, statusInfo)
     icon.onerror = () => { icon.src = 'assets/android.png'; };
 
     const badge = document.getElementById('detailBadge');
-    badge.className = `status-badge ${statusInfo.class || 'badge-loading'}`;
-    badge.textContent = statusInfo.text || 'Checking...';
+    badge.className = `status-badge ${appModel.cssClass || 'badge-loading'}`;
+    badge.textContent = appModel.text || 'Checking...';
 
     const permListContainer = document.getElementById('detailPermsList');
     permListContainer.innerHTML = '';
@@ -317,20 +315,20 @@ function renderDetailContent(app, statusInfo)
     document.getElementById('deselectAllBtn').disabled = uiDisabled;
     document.getElementById('detailSearchInput').disabled = uiDisabled;
 
-    const permissionObjects = app.permissions
-        .map(permString => new Permission(permString, PERMISSION_INFO[permString]))
+    const permissionModels = app.permissions
+        .map(permString => new PermissionModel(permString, PERMISSION_INFO[permString]))
         .sort((a, b) => a.cleanName.localeCompare(b.cleanName));
 
-    permissionObjects.forEach(permission =>
+    permissionModels.forEach(permissionModel =>
     {
-        const isGranted = statusInfo.permsState ? !!statusInfo.permsState[permission.rawName] : false;
+        const isGranted = appModel.permissions ? !!appModel.permissions[permissionModel.rawName] : false;
 
         const label = document.createElement('label');
         label.className = 'perm-card';
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.value = permission.rawName;
+        checkbox.value = permissionModel.rawName;
         checkbox.checked = !uiDisabled && !isGranted;
         checkbox.disabled = uiDisabled;
 
@@ -342,7 +340,7 @@ function renderDetailContent(app, statusInfo)
 
         const nameSpan = document.createElement('span');
         nameSpan.className = 'perm-name';
-        nameSpan.textContent = permission.cleanName;
+        nameSpan.textContent = permissionModel.cleanName;
 
         const tag = document.createElement('span');
         tag.className = `perm-tag ${isGranted ? 'perm-tag-granted' : 'perm-tag-missing'}`;
@@ -353,7 +351,7 @@ function renderDetailContent(app, statusInfo)
 
         const descSpan = document.createElement('p');
         descSpan.className = 'perm-desc';
-        descSpan.textContent = permission.description;
+        descSpan.textContent = permissionModel.description;
 
         info.appendChild(cardHeader);
         info.appendChild(descSpan);
@@ -385,21 +383,21 @@ async function openAppDetailView(app)
     }
 
     activeTargetApp = app;
-    let statusInfo = appsStatusMap[app.id] || { key: AppStatus.LOADING, text: 'Checking...', class: 'badge-loading', permsState: {} };
+    let appModel = appModelDict[app.id] || new AppModel(AppStatus.LOADING, 'Checking...', 'badge-loading', {});
 
-    renderDetailContent(app, statusInfo);
+    renderDetailContent(app, appModel);
     
     document.getElementById('mainView').classList.remove('active');
     document.getElementById('detailView').classList.add('active');
     window.scrollTo(0, 0);
 
-    if (!appsStatusMap[app.id] || statusInfo.statusKey === AppStatus.LOADING)
+    if (!appModelDict[app.id] || appModel.status === AppStatus.LOADING)
     {
-        const freshStatus = await inspectAppStatus(app);
-        appsStatusMap[app.id] = freshStatus;
+        const freshAppModel = await evalAppModel(app);
+        appModelDict[app.id] = freshAppModel;
         if (activeTargetApp && activeTargetApp.id === app.id)
         {
-            renderDetailContent(app, freshStatus);
+            renderDetailContent(app, freshAppModel);
         }
     }
 }
@@ -407,10 +405,11 @@ async function openAppDetailView(app)
 function updateDetailActionButtons()
 {
     if (!activeTargetApp) return;
+    if (!appModelDict[activeTargetApp.id]) return;
 
-    const statusInfo = appsStatusMap[activeTargetApp.id] || {};
-    const uiDisabled = statusInfo.statusKey === AppStatus.NOTINSTALLED || 
-                       statusInfo.statusKey === AppStatus.ERROR;
+    const appModel = appModelDict[activeTargetApp.id];
+    const uiDisabled = appModel.status === AppStatus.NOTINSTALLED || 
+                       appModel.status === AppStatus.ERROR;
 
     const hasChecked = document.querySelectorAll('#detailPermsList input[type="checkbox"]:checked').length > 0;
 
@@ -423,23 +422,31 @@ function filterDetailPermissions(query)
     const cards = document.querySelectorAll('#detailPermsList .perm-card');
     let visibleCount = 0;
 
-    cards.forEach(card => {
+    cards.forEach(card =>
+    {
         const name = card.querySelector('.perm-name').textContent.toLowerCase();
         const desc = card.querySelector('.perm-desc').textContent.toLowerCase();
 
-        if (name.includes(query) || desc.includes(query)) {
+        if (name.includes(query) || desc.includes(query))
+        {
             card.style.display = 'flex';
             visibleCount++;
-        } else {
+        }
+        else
+        {
             card.style.display = 'none';
         }
     });
 
     const emptyMsg = document.getElementById('detailEmptyMessage');
-    if (emptyMsg) {
-        if (visibleCount === 0 && cards.length > 0) {
+    if (emptyMsg)
+    {
+        if (visibleCount === 0 && cards.length > 0)
+        {
             emptyMsg.style.display = 'block';
-        } else {
+        }
+        else
+        {
             emptyMsg.style.display = 'none';
         }
     }
@@ -462,14 +469,10 @@ function applyDetailFilter()
 ///////////////////////////////////////////////////////////////////////////////
 // #region BUTTONS
 
-
-// Núcleo común a los 4 botones de conceder/revocar (todos/seleccionados).
-// targets: [{ pkg, perms }, ...] — ya resueltos por el caller, así el
-// "targetName" de los mensajes se captura ANTES de que showMainView()
-// resetee activeTargetApp, igual que en el código original.
 async function runBulkPermissionAction(options)
 {
-    const {
+    const
+    {
         action,
         targets,
         emptyMessage,
@@ -495,7 +498,6 @@ async function runBulkPermissionAction(options)
     if (!(await ensureBridgeReady())) return;
 
     showLoadingSpinner(loadingText);
-    // CRÍTICO: Ceder el control al WebView 100ms para pintar el UI antes de colapsar el event loop
     await new Promise(r => setTimeout(r, 100));
 
     try
@@ -519,7 +521,7 @@ document.getElementById('grantAllBtn').onclick = () =>
     runBulkPermissionAction(
         {
             action: 'grant',
-            targets: appsData.map(a => ({ pkg: a.package, perms: a.permissions })),
+            targets: appStore.map(a => ({ pkg: a.package, perms: a.permissions })),
             confirmMessage: "Are you sure you want to grant full permissions to all supported apps?",
             confirmOptions: { title: "Grant all", confirmText: "Grant all" },
             loadingText: "Granting permissions...",
@@ -531,7 +533,7 @@ document.getElementById('revokeAllBtn').onclick = () =>
     runBulkPermissionAction(
         {
             action: 'revoke',
-            targets: appsData.map(a => ({ pkg: a.package, perms: a.permissions })),
+            targets: appStore.map(a => ({ pkg: a.package, perms: a.permissions })),
             confirmMessage: "Are you sure you want to revoke full permissions from all supported apps?",
             confirmOptions: { title: "Revoke all", confirmText: "Revoke all", danger: true },
             loadingText: "Revoking permissions...",

@@ -1,4 +1,4 @@
-const APPS_DATA =
+const APP_STORE =
 [
     {
         id: "tasker",

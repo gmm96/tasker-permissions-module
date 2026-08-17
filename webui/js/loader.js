@@ -4,7 +4,8 @@
     [
         'js/data/apps.js',
         'js/data/permissions.js',
-        'js/models/permission.js',
+        'js/models/permission-model.js',
+        'js/models/app-model.js',
         'js/enum/app-status.js',
         'js/enum/permission-status.js',
         'js/enum/tab-status.js',
