@@ -1,10 +1,14 @@
 class Permission
 {
-    constructor(rawName, description) 
+    constructor(name, description) 
     {
-        this.rawName = rawName;
+        this.name = name;
         this.description = description || "No available description.";
-        this.cleanName = this.rawName.replace(/^android\.permission\./i, '');
         Object.freeze(this);
+    }
+    
+    get cleanName()
+    {
+        return this.name.replace(/^android\.permission\./i, '');
     }
 }

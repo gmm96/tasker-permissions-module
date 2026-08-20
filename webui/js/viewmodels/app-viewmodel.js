@@ -1,26 +1,27 @@
 class AppViewModel
 {
-    constructor(appModel, appStatus)
+    constructor(app, appCondition)
     {
-        this.id = appModel.id;
-        this.name = appModel.name;
-        this.package = appModel.package;
-        this.icon = appModel.icon;
-        
-        this.status = appStatus.status;
-        
-        this.ui = this.#_buildUiProperties(appModel.permissions.length, appStatus.permissions);
-        
-        this.permissionsList = (appModel.permissions || [])
-            .map(permString => {
-                const domainModel = new Permission(permString, PERMISSION_INFO[permString]);
-                const isGranted = !!appStatus.permissions[permString];
-                return new PermissionViewModel(domainModel, isGranted, this.ui.disabled);
-            })
+        this.id = app.id;
+        this.name = app.name;
+        this.package = app.package;
+        this.icon = app.icon || '';
+        this.status = appCondition.status;
+        this.ui = this.#buildUiProperties(
+            app.permissions.length,
+            Object.values(appCondition.permissions).filter(Boolean).length
+        );
+        this.permissionViewModels = (app.permissions || [])
+            .map(perm => new PermissionViewModel(perm, !!appCondition.permissions[perm.name], this.ui.disabled))
             .sort((a, b) => a.cleanName.localeCompare(b.cleanName));
     }
+    
+    get iconPath()
+    {
+        return `assets/app_icons/${this.icon}`;
+    }
 
-    #_buildUiProperties(totalPerms, grantedPermissionsMap)
+    #buildUiProperties(totalPerms, totalGranted)
     {
         switch (this.status)
         {
@@ -35,8 +36,7 @@ class AppViewModel
             case AppStatus.ALLGRANTED:
                 return { text: 'All granted', cssClass: 'badge-all-granted', disabled: false };
             case AppStatus.PARTIAL:
-                const granted = Object.values(grantedPermissionsMap).filter(Boolean).length;
-                return { text: `Partial (${granted}/${totalPerms})`, cssClass: 'badge-partial', disabled: false };
+                return { text: `Partial (${totalGranted}/${totalPerms})`, cssClass: 'badge-partial', disabled: false };
             default:
                 return { text: 'Unknown', cssClass: 'badge-error', disabled: true };
         }

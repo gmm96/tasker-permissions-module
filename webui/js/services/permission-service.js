@@ -11,9 +11,9 @@ async function inspectAppPermissions(app)
     const bridge = await tryBridgeCall();
 
     if (!bridge)
-        {
+    {
         showBridgeDebug('No window.Shizuku bridge object found.');
-        return new AppSnapshot(AppStatus.ERROR, {});
+        return new AppCondition(AppStatus.ERROR, {});
     }
 
     const trustInfo = await getModuleTrustInfo();
@@ -23,7 +23,7 @@ async function inspectAppPermissions(app)
             `Module "${trustInfo.id || 'hidden-permissions'}" is not trusted (mode: ${trustInfo.accessMode || 'unknown'}). ` +
             `Long-press this module's card in Shevery/Nightzuku/Shizuku ADB Module Manager and grant Full Trust / Full Access.`
         );
-        return new AppSnapshot(AppStatus.ERROR, {});
+        return new AppCondition(AppStatus.ERROR, {});
     }
 
     try
@@ -32,11 +32,11 @@ async function inspectAppPermissions(app)
         if (pkgResult === null)
         {
             showBridgeDebug();
-            return new AppSnapshot(AppStatus.ERROR, {});
+            return new AppCondition(AppStatus.ERROR, {});
         }
         if (!pkgResult.includes(`package:${app.package}`))
         {
-            return new AppSnapshot(AppStatus.NOTINSTALLED, {});
+            return new AppCondition(AppStatus.NOTINSTALLED, {});
         }
 
         const dumpsysResult = await executeShell(`dumpsys package ${app.package}`);
@@ -45,8 +45,8 @@ async function inspectAppPermissions(app)
 
         for (const permission of app.permissions)
         {
-            const isGranted = isPermissionGrantedInDumpsys(dumpsysResult, permission);
-            permsState[permission] = isGranted;
+            const isGranted = isPermissionGrantedInDumpsys(dumpsysResult, permission.name);
+            permsState[permission.name] = isGranted;
             if (isGranted) grantedCount++;
         }
 
@@ -62,12 +62,12 @@ async function inspectAppPermissions(app)
             status = AppStatus.ALLGRANTED;
         }
 
-        return new AppSnapshot(status, permsState);
+        return new AppCondition(status, permsState);
     }
     catch (e)
     {
         console.error("Error inspecting " + app.id, e);
-        return new AppSnapshot(AppStatus.ERROR, {});
+        return new AppCondition(AppStatus.ERROR, {});
     }
 }
 

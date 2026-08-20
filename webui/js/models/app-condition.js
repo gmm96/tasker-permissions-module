@@ -1,4 +1,4 @@
-class AppSnapshot
+class AppCondition
 {
     constructor(status, grantedPermissionsMap)
     {

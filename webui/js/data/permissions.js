@@ -1,4 +1,4 @@
-const PERMISSION_INFO =
+const PERMISSIONINFO =
 {
     "android.permission.WRITE_SECURE_SETTINGS": "Allows reading or writing system settings like location mode, toggle status, and system behaviors.",
     "android.permission.DUMP": "Allows retrieving internal state and debugging information from system services.",

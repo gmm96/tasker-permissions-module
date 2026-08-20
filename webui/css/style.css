@@ -50,7 +50,6 @@ button {
 .view-screen.active {
     display: flex;
     flex-direction: column;
-    /*min-height: 100vh;*/
     background-color: var(--bg-color);
 }
 
@@ -122,6 +121,7 @@ h1 {
     font-size: 11px;
 }
 
+
 /* ============================================
    SEARCH BAR COMPONENT
    ============================================ */
@@ -179,6 +179,7 @@ h1 {
 .clear-search-btn:active {
     color: var(--text-primary);
 }
+
 
 /* ============================================ */
 
@@ -304,6 +305,7 @@ h1 {
     color: var(--success-color);
     border: 1px solid var(--success-color);
 }
+
 
 /* ============================================
    DETAIL VIEW
@@ -644,6 +646,7 @@ h1 {
     opacity: 0.8;
     cursor: pointer;
 }
+
 
 /* ============================================
    alertUi / confirmUi — sustituto de alert()/confirm()
