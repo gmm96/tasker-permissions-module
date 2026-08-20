@@ -2,22 +2,22 @@
 {
     const scripts =
     [
-        'js/data/apps.js',
-        'js/data/permissions.js',
-        'js/enum/app-status.js',
-        'js/enum/permission-status.js',
-        'js/enum/tab-status.js',
-        'js/models/permission.js',
-        'js/models/app-condition.js',
-        'js/models/app.js',
-        'js/viewmodels/permission-viewmodel.js',
-        'js/viewmodels/app-viewmodel.js',
-        'js/services/status-mapper.js',
-        'js/services/permission-service.js',
-        'js/ui/dialogs.js',
-        'js/ui/spinner.js',
-        'js/ui/viewport-fix.js',
-        'js/shizuku.js',
+        'js/infrastructure/data/apps.js',
+        'js/infrastructure/data/permissions.js',
+        'js/domain/enums/app-status.js',
+        'js/domain/enums/permission-status.js',
+        'js/domain/enums/tab-status.js',
+        'js/domain/models/permission.js',
+        'js/domain/models/app-condition.js',
+        'js/domain/models/app.js',
+        'js/ui/viewmodels/permission-viewmodel.js',
+        'js/ui/viewmodels/app-viewmodel.js',
+        'js/infrastructure/shizuku.js',
+        'js/application/services/status-mapper.js',
+        'js/application/services/permission-service.js',
+        'js/ui/components/dialogs.js',
+        'js/ui/components/spinner.js',
+        'js/ui/components/viewport-fix.js',
         'js/manager.js'
     ];
 

@@ -361,7 +361,8 @@ h1 {
 }
 
 .detail-app-info {
-    min-width: calc(100% - 64px);
+    flex: 1;
+    min-width: 0;
 }
 
 .detail-icon {
