@@ -17,6 +17,12 @@ let currentTab = TabStatus.ALLAPPS;
 let currentSearchQuery = '';
 let activeTargetApp = null;
 
+function getActiveAppViewModel()
+{
+    if (!activeTargetApp) return null;
+    return appViewModelDict[activeTargetApp.id] || null;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // #region MAIN VIEW
@@ -128,7 +134,7 @@ async function updateAllStatuses()
         document.getElementById(`count-${tab}`).textContent = counts[tab];
     }
     
-    renderMainButtons();
+    renderMainActionButtons(Object.values(appViewModelDict));
     renderList();
 }
 
@@ -167,7 +173,7 @@ function renderDetailContent(appViewModel)
         document.getElementById('selectAllBtn').disabled = true;
         document.getElementById('deselectAllBtn').disabled = true;
         document.getElementById('detailSearchInput').disabled = true;
-        updateDetailActionButtons();
+        renderDetailActionButtons(getActiveAppViewModel());
         return;
     }
 
@@ -222,8 +228,8 @@ function renderDetailContent(appViewModel)
     searchEmptyMsg.style.display = 'none';
     permListContainer.appendChild(searchEmptyMsg);
 
-    updateDetailActionButtons();
-    applyDetailFilter();
+    renderDetailActionButtons(getActiveAppViewModel());
+    readInputAndApplyDetailFilter();
 }
 
 async function openAppDetailView(app)
@@ -253,55 +259,6 @@ async function openAppDetailView(app)
         appViewModelDict[app.id] = freshViewModel;
         
         if (activeTargetApp && activeTargetApp.id === app.id) renderDetailContent(freshViewModel);
-    }
-}
-
-function updateDetailActionButtons()
-{
-    if (!activeTargetApp) return;
-    const appViewModel = appViewModelDict[activeTargetApp.id];
-    if (!appViewModel) return;
-
-    const hasChecked = document.querySelectorAll('#detailPermsList input[type="checkbox"]:checked').length > 0;
-
-    document.getElementById('grantSelectedBtn').disabled = appViewModel.disabled || !hasChecked;
-    document.getElementById('revokeSelectedBtn').disabled = appViewModel.disabled || !hasChecked;
-}
-
-function filterDetailPermissions(query)
-{
-    const cards = document.querySelectorAll('#detailPermsList .perm-card');
-    let visibleCount = 0;
-
-    cards.forEach(card =>
-    {
-        const cleanName = card.querySelector('.perm-name').textContent.toLowerCase();
-        const name = card.querySelector('input[type="checkbox"]').value.toLowerCase();
-        if (cleanName.includes(query) || name.includes(query))
-        {
-            card.style.display = 'flex';
-            visibleCount++;
-        }
-        else
-        {
-            card.style.display = 'none';
-        }
-    });
-
-    const emptyMsg = document.getElementById('detailEmptyMessage');
-    if (emptyMsg)
-    {
-        emptyMsg.style.display = (visibleCount === 0 && cards.length > 0) ? 'block' : 'none';
-    }
-}
-
-function applyDetailFilter()
-{
-    const detailInput = document.getElementById('detailSearchInput');
-    if (detailInput)
-    {
-        const query = (detailInput.value || '').toLowerCase();
-        filterDetailPermissions(query);
     }
 }
 
@@ -405,7 +362,9 @@ document.getElementById('revokeSelectedBtn').onclick = () => runSelectedPermissi
 
 document.getElementById('backBtn').onclick = showMainView;
 
-document.getElementById('detailPermsList').addEventListener('change', () => updateDetailActionButtons());
+document.getElementById('detailPermsList').addEventListener('change', () => 
+    renderDetailActionButtons(getActiveAppViewModel())
+);
 
 function setAllDetailCheckboxes(checked)
 {
@@ -415,7 +374,7 @@ function setAllDetailCheckboxes(checked)
         const cb = card.querySelector('input[type="checkbox"]');
         if (cb && !cb.disabled) cb.checked = checked;
     });
-    updateDetailActionButtons();
+    renderDetailActionButtons(getActiveAppViewModel());
 }
 
 document.getElementById('selectAllBtn').onclick = () => setAllDetailCheckboxes(true);

@@ -27,3 +27,49 @@ function applyMarquee()
         );
     }
 }
+
+function renderDetailActionButtons(appViewModel)
+{
+    if (!appViewModel) return;
+
+    const hasChecked = document.querySelectorAll('#detailPermsList input[type="checkbox"]:checked').length > 0;
+    document.getElementById('grantSelectedBtn').disabled = appViewModel.disabled || !hasChecked;
+    document.getElementById('revokeSelectedBtn').disabled = appViewModel.disabled || !hasChecked;
+}
+
+function filterDetailPermissions(query)
+{
+    const cards = document.querySelectorAll('#detailPermsList .perm-card');
+    let visibleCount = 0;
+
+    cards.forEach(card =>
+    {
+        const cleanName = card.querySelector('.perm-name').textContent.toLowerCase();
+        const name = card.querySelector('input[type="checkbox"]').value.toLowerCase();
+        if (cleanName.includes(query) || name.includes(query))
+        {
+            card.style.display = 'flex';
+            visibleCount++;
+        }
+        else
+        {
+            card.style.display = 'none';
+        }
+    });
+
+    const emptyMsg = document.getElementById('detailEmptyMessage');
+    if (emptyMsg)
+    {
+        emptyMsg.style.display = (visibleCount === 0 && cards.length > 0) ? 'block' : 'none';
+    }
+}
+
+function readInputAndApplyDetailFilter()
+{
+    const detailInput = document.getElementById('detailSearchInput');
+    if (detailInput)
+    {
+        const query = (detailInput.value || '').toLowerCase();
+        filterDetailPermissions(query);
+    }
+}

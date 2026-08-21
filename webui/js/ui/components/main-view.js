@@ -13,12 +13,12 @@ function setupTabs()
     });
 }
 
-function renderMainButtons(appViewModels)
+function renderMainActionButtons(appViewModels)
 {
     let revokeAllBtnDisabled = true;
     let grantAllBtnDisabled = true;
 
-    for (const appVM of Object.values(appViewModels))
+    for (const appVM of appViewModels)
     {
         if (!appVM.disabled)
         {
