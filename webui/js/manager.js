@@ -27,6 +27,21 @@ function getActiveAppViewModel()
 ///////////////////////////////////////////////////////////////////////////////
 // #region MAIN VIEW
 
+function setupTabs()
+{
+    const tabs = document.querySelectorAll('.tab-btn');
+    tabs.forEach(tab =>
+    {
+        tab.onclick = () =>
+        {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentTab = tab.getAttribute('data-filter');
+            renderList();
+        };
+    });
+}
+
 function getTabApps()
 {
     return allApps.filter(app =>
@@ -134,7 +149,7 @@ async function updateAllStatuses()
         document.getElementById(`count-${tab}`).textContent = counts[tab];
     }
     
-    renderMainActionButtons(Object.values(appViewModelDict));
+    renderMainActionButtons(appViewModelDict);
     renderList();
 }
 

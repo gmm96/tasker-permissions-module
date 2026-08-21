@@ -1,24 +1,9 @@
-function setupTabs()
-{
-    const tabs = document.querySelectorAll('.tab-btn');
-    tabs.forEach(tab =>
-    {
-        tab.onclick = () =>
-        {
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            currentTab = tab.getAttribute('data-filter');
-            renderList();
-        };
-    });
-}
-
 function renderMainActionButtons(appViewModels)
 {
     let revokeAllBtnDisabled = true;
     let grantAllBtnDisabled = true;
 
-    for (const appVM of appViewModels)
+    for (const appVM of Object.values(appViewModels))
     {
         if (!appVM.disabled)
         {
