@@ -2,10 +2,10 @@ class StatusMapper
 {
     static #appToTab = new Map
     ([
-        [AppStatus.NONEGRANTED.name, TabStatus.NONEGRANTED],
-        [AppStatus.PARTIAL.name, TabStatus.PARTIAL],
-        [AppStatus.ALLGRANTED.name, TabStatus.ALLGRANTED],
-        [AppStatus.NOTINSTALLED.name, TabStatus.NOTINSTALLED]
+        [AppStatus.NONEGRANTED, TabStatus.NONEGRANTED],
+        [AppStatus.PARTIAL, TabStatus.PARTIAL],
+        [AppStatus.ALLGRANTED, TabStatus.ALLGRANTED],
+        [AppStatus.NOTINSTALLED, TabStatus.NOTINSTALLED]
     ]);
 
     static #tabToApp = new Map

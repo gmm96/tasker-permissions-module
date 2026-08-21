@@ -6,9 +6,15 @@ class PermissionViewModel
         this.cleanName = permission.cleanName;
         this.description = permission.description;
         this.isGranted = isGranted;
+        
+        this.#buildUiProperties(isGranted, isAppUiDisabled);
+    }
+    
+    #buildUiProperties(isGranted, isAppUiDisabled)
+    {
         this.tagText = isGranted ? 'Granted' : 'Not granted';
         this.tagClass = isGranted ? 'perm-tag-granted' : 'perm-tag-missing';
-        this.isCheckable = !isAppUiDisabled && !isGranted;
-        this.isDisabled = isAppUiDisabled;
+        this.checked = !isAppUiDisabled && !isGranted;
+        this.disabled = isAppUiDisabled;
     }
 }

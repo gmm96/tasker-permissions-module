@@ -18,56 +18,30 @@ let currentSearchQuery = '';
 let activeTargetApp = null;
 
 
-function showBridgeDebug(extraLine)
-{
-    const el = document.getElementById('bridgeDebug');
-    if (!el) return;
-    el.style.display = 'block';
-    let html = window.Shizuku
-        ? 'Detected on window: <br>' + JSON.stringify(window.Shizuku, null, 4)
-        : 'No Shizuku shell bridge object found on window.';
-    if (extraLine) html = extraLine + '<br><br>' + html;
-    el.innerHTML = html;
-}
-
-async function ensureBridgeReady()
-{
-    const bridge = await tryBridgeCall();
-    if (!bridge)
-    {
-        showBridgeDebug('No window.Shizuku bridge object found — nothing was granted.');
-        alertUi("Could not reach the ADB shell bridge — nothing was granted. See the debug info under the header.");
-        return false;
-    }
-    const trustInfo = await getModuleTrustInfo();
-    if (trustInfo && trustInfo.trusted === false)
-    {
-        showBridgeDebug(
-            `Module "${trustInfo.id || 'tasker-permissions'}" is not trusted — nothing was granted. ` +
-            `Long-press this module's card in Shevery and grant Full Trust / Full Access.`
-        );
-        alertUi("This module isn't trusted yet in Shevery — nothing was granted. See the debug info under the header.");
-        return false;
-    }
-    return true;
-}
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // #region MAIN VIEW
 
-function setupTabs()
+function getTabApps()
 {
-    const tabs = document.querySelectorAll('.tab-btn');
-    tabs.forEach(tab =>
+    return allApps.filter(app =>
     {
-        tab.onclick = () =>
+        const appViewModel = appViewModelDict[app.id];
+        if (!appViewModel) return false;
+
+        if (currentTab !== TabStatus.ALLAPPS)
         {
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            currentTab = tab.getAttribute('data-filter');
-            renderList();
-        };
+            const targetAppStatus = StatusMapper.toAppStatus(currentTab);
+            if (appViewModel.status !== targetAppStatus) return false;
+        }
+        
+        if (currentSearchQuery)
+        {
+            const nameMatch = appViewModel.name.toLowerCase().includes(currentSearchQuery);
+            const pkgMatch = appViewModel.package.toLowerCase().includes(currentSearchQuery);
+            if (!nameMatch && !pkgMatch) return false;
+        }
+
+        return true;
     });
 }
 
@@ -76,27 +50,12 @@ function renderList()
     const list = document.getElementById('appsList');
     if (!list) return;
     list.innerHTML = '';
-    let visibleCount = 0;
+    const tabApps = getTabApps();
 
-    allApps.forEach(app =>
+    tabApps.forEach(app =>
     {
-        const appViewModel = appViewModelDict[app.id] || new AppViewModel(app, new AppCondition(AppStatus.LOADING));
+        const appViewModel = appViewModelDict[app.id];
         
-        if (currentTab !== TabStatus.ALLAPPS)
-        {
-            const targetAppStatus = StatusMapper.toAppStatus(currentTab);
-            if (appViewModel.status !== targetAppStatus) return;
-        }
-
-        if (currentSearchQuery)
-        {
-            const nameMatch = appViewModel.name.toLowerCase().includes(currentSearchQuery);
-            const pkgMatch = appViewModel.package.toLowerCase().includes(currentSearchQuery);
-            if (!nameMatch && !pkgMatch) return;
-        }
-        
-        visibleCount++;
-
         const item = document.createElement('div');
         item.className = 'app-item';
         item.onclick = () => openAppDetailView(app);
@@ -128,36 +87,18 @@ function renderList()
         leftSec.appendChild(info);
 
         const badge = document.createElement('span');
-        badge.className = `status-badge ${appViewModel.ui.cssClass}`;
-        badge.textContent = appViewModel.ui.text;
+        badge.className = `status-badge ${appViewModel.tagClass}`;
+        badge.textContent = appViewModel.tagText;
 
         item.appendChild(leftSec);
         item.appendChild(badge);
         list.appendChild(item);
     });
 
-    if (visibleCount === 0)
+    if (tabApps.length === 0)
     {
         list.innerHTML = '<div class="empty-message">No applications found in this category</div>';
     }
-}
-
-function renderMainButtons()
-{
-    let revokeAllBtnDisabled = true;
-    let grantAllBtnDisabled = true;
-
-    for (const appViewModel of Object.values(appViewModelDict))
-    {
-        if (!appViewModel.ui.disabled)
-        {
-            if (appViewModel.status !== AppStatus.NONEGRANTED) revokeAllBtnDisabled = false;
-            if (appViewModel.status !== AppStatus.ALLGRANTED) grantAllBtnDisabled = false;
-        }
-    }
-
-    document.getElementById('revokeAllBtn').disabled = revokeAllBtnDisabled;
-    document.getElementById('grantAllBtn').disabled = grantAllBtnDisabled;
 }
 
 async function updateAllStatuses()
@@ -214,8 +155,8 @@ function renderDetailContent(appViewModel)
     icon.onerror = () => { icon.src = 'assets/android.png'; };
 
     const badge = document.getElementById('detailBadge');
-    badge.className = `status-badge ${appViewModel.ui.cssClass}`;
-    badge.textContent = appViewModel.ui.text;
+    badge.className = `status-badge ${appViewModel.tagClass}`;
+    badge.textContent = appViewModel.tagText;
 
     const permListContainer = document.getElementById('detailPermsList');
     permListContainer.innerHTML = '';
@@ -230,9 +171,9 @@ function renderDetailContent(appViewModel)
         return;
     }
 
-    document.getElementById('selectAllBtn').disabled = appViewModel.ui.disabled;
-    document.getElementById('deselectAllBtn').disabled = appViewModel.ui.disabled;
-    document.getElementById('detailSearchInput').disabled = appViewModel.ui.disabled;
+    document.getElementById('selectAllBtn').disabled = appViewModel.disabled;
+    document.getElementById('deselectAllBtn').disabled = appViewModel.disabled;
+    document.getElementById('detailSearchInput').disabled = appViewModel.disabled;
 
     appViewModel.permissionViewModels.forEach(permVM =>
     {
@@ -242,8 +183,8 @@ function renderDetailContent(appViewModel)
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.value = permVM.name;
-        checkbox.checked = permVM.isCheckable;
-        checkbox.disabled = permVM.isDisabled;
+        checkbox.checked = permVM.checked;
+        checkbox.disabled = permVM.disabled;
 
         const info = document.createElement('div');
         info.className = 'perm-info';
@@ -285,36 +226,6 @@ function renderDetailContent(appViewModel)
     applyDetailFilter();
 }
 
-function applyMarquee()
-{
-    const pkgElement = document.getElementById('detailPackage');
-    pkgElement.style.textOverflow = 'ellipsis';
-    const overflow = pkgElement.scrollWidth - pkgElement.clientWidth;
-
-    if (overflow > 0)
-    {
-        pkgElement.style.textOverflow = 'clip';
-        const originalText = pkgElement.textContent;
-        pkgElement.innerHTML = `<span style="display: inline-block;">${originalText}</span>`;
-        
-        const textSpan = pkgElement.firstChild;
-        textSpan.animate(
-            [
-                { transform: 'translateX(0)', offset: 0 },
-                { transform: 'translateX(0)', offset: 0.15 },
-                { transform: `translateX(-${overflow}px)`, offset: 0.85 },
-                { transform: `translateX(-${overflow}px)`, offset: 1 }
-            ],
-            {
-                duration: 5000,
-                iterations: Infinity,
-                direction: 'alternate',
-                easing: 'ease-in-out'
-            }
-        );
-    }
-}
-
 async function openAppDetailView(app)
 {
     if (!activeTargetApp || activeTargetApp.id !== app.id)
@@ -353,8 +264,8 @@ function updateDetailActionButtons()
 
     const hasChecked = document.querySelectorAll('#detailPermsList input[type="checkbox"]:checked').length > 0;
 
-    document.getElementById('grantSelectedBtn').disabled = appViewModel.ui.disabled || !hasChecked;
-    document.getElementById('revokeSelectedBtn').disabled = appViewModel.ui.disabled || !hasChecked;
+    document.getElementById('grantSelectedBtn').disabled = appViewModel.disabled || !hasChecked;
+    document.getElementById('revokeSelectedBtn').disabled = appViewModel.disabled || !hasChecked;
 }
 
 function filterDetailPermissions(query)
@@ -364,10 +275,9 @@ function filterDetailPermissions(query)
 
     cards.forEach(card =>
     {
-        const name = card.querySelector('.perm-name').textContent.toLowerCase();
-        const desc = card.querySelector('.perm-desc').textContent.toLowerCase();
-
-        if (name.includes(query) || desc.includes(query))
+        const cleanName = card.querySelector('.perm-name').textContent.toLowerCase();
+        const name = card.querySelector('input[type="checkbox"]').value.toLowerCase();
+        if (cleanName.includes(query) || name.includes(query))
         {
             card.style.display = 'flex';
             visibleCount++;
@@ -453,7 +363,7 @@ async function runBulkPermissionAction(options)
 document.getElementById('grantAllBtn').onclick = () =>
     runBulkPermissionAction({
         action: 'grant',
-        targets: allApps.map(a => ({ pkg: a.package, perms: a.permissions.map(p => p.name) })),
+        targets: getTabApps().map(a => ({ pkg: a.package, perms: a.permissions.map(p => p.name) })),
         confirmMessage: "Are you sure you want to grant full permissions to all supported apps?",
         confirmOptions: { title: "Grant all", confirmText: "Grant all" },
         loadingText: "Granting permissions...",
@@ -463,7 +373,7 @@ document.getElementById('grantAllBtn').onclick = () =>
 document.getElementById('revokeAllBtn').onclick = () =>
     runBulkPermissionAction({
         action: 'revoke',
-        targets: allApps.map(a => ({ pkg: a.package, perms: a.permissions.map(p => p.name) })),
+        targets: getTabApps().map(a => ({ pkg: a.package, perms: a.permissions.map(p => p.name) })),
         confirmMessage: "Are you sure you want to revoke full permissions from all supported apps?",
         confirmOptions: { title: "Revoke all", confirmText: "Revoke all", danger: true },
         loadingText: "Revoking permissions...",

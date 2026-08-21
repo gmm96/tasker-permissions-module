@@ -57,3 +57,37 @@ async function executeShell(command)
         return null;
     }
 }
+
+function showBridgeDebug(extraLine)
+{
+    const el = document.getElementById('bridgeDebug');
+    if (!el) return;
+    el.style.display = 'block';
+    let html = window.Shizuku
+        ? 'Detected on window: <br>' + JSON.stringify(window.Shizuku, null, 4)
+        : 'No Shizuku shell bridge object found on window.';
+    if (extraLine) html = extraLine + '<br><br>' + html;
+    el.innerHTML = html;
+}
+
+async function ensureBridgeReady()
+{
+    const bridge = await tryBridgeCall();
+    if (!bridge)
+    {
+        showBridgeDebug('No window.Shizuku bridge object found — nothing was granted.');
+        alertUi("Could not reach the ADB shell bridge — nothing was granted. See the debug info under the header.");
+        return false;
+    }
+    const trustInfo = await getModuleTrustInfo();
+    if (trustInfo && trustInfo.trusted === false)
+    {
+        showBridgeDebug(
+            `Module "${trustInfo.id || 'tasker-permissions'}" is not trusted — nothing was granted. ` +
+            `Long-press this module's card in Shevery and grant Full Trust / Full Access.`
+        );
+        alertUi("This module isn't trusted yet in Shevery — nothing was granted. See the debug info under the header.");
+        return false;
+    }
+    return true;
+}

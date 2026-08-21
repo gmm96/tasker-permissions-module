@@ -7,12 +7,12 @@ class AppViewModel
         this.package = app.package;
         this.icon = app.icon || '';
         this.status = appCondition.status;
-        this.ui = this.#buildUiProperties(
+        this.#buildUiProperties(
             app.permissions.length,
             Object.values(appCondition.permissions).filter(Boolean).length
         );
         this.permissionViewModels = (app.permissions || [])
-            .map(perm => new PermissionViewModel(perm, !!appCondition.permissions[perm.name], this.ui.disabled))
+            .map(perm => new PermissionViewModel(perm, !!appCondition.permissions[perm.name], this.disabled))
             .sort((a, b) => a.cleanName.localeCompare(b.cleanName));
     }
     
@@ -26,19 +26,19 @@ class AppViewModel
         switch (this.status)
         {
             case AppStatus.LOADING:
-                return { text: 'Checking...', cssClass: 'badge-loading', disabled: true };
+                this.tagText = 'Checking...'; this.tagClass = 'badge-loading'; this.disabled = true; break;
             case AppStatus.ERROR:
-                return { text: 'Unavailable', cssClass: 'badge-error', disabled: true };
+                this.tagText = 'Unavailable'; this.tagClass = 'badge-error'; this.disabled = true; break;
             case AppStatus.NOTINSTALLED:
-                return { text: 'Not installed', cssClass: 'badge-not-installed', disabled: true };
+                this.tagText = 'Not installed'; this.tagClass = 'badge-not-installed'; this.disabled = true; break;
             case AppStatus.NONEGRANTED:
-                return { text: 'None granted', cssClass: 'badge-none-granted', disabled: false };
+                this.tagText = 'None granted'; this.tagClass = 'badge-none-granted'; this.disabled = false; break;
             case AppStatus.ALLGRANTED:
-                return { text: 'All granted', cssClass: 'badge-all-granted', disabled: false };
+                this.tagText = 'All granted'; this.tagClass = 'badge-all-granted'; this.disabled = false; break;
             case AppStatus.PARTIAL:
-                return { text: `Partial (${totalGranted}/${totalPerms})`, cssClass: 'badge-partial', disabled: false };
+                this.tagText = `Partial (${totalGranted}/${totalPerms})`; this.tagClass = 'badge-partial'; this.disabled = false; break;
             default:
-                return { text: 'Unknown', cssClass: 'badge-error', disabled: true };
+                this.tagText = 'Unknown'; this.tagClass = 'badge-error'; this.disabled = true; break;
         }
     }
 }
