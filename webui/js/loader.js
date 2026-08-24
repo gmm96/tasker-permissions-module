@@ -12,12 +12,16 @@
         'js/domain/models/app.js',
         'js/ui/viewmodels/permission-viewmodel.js',
         'js/ui/viewmodels/app-viewmodel.js',
-        'js/infrastructure/shizuku.js',
         'js/application/services/status-mapper.js',
-        'js/application/services/permission-service.js',
         'js/ui/components/dialogs.js',
         'js/ui/components/spinner.js',
         'js/ui/components/viewport-fix.js',
+        'js/ui/components/search-input.js',
+        'js/infrastructure/shizuku.js',
+        'js/application/services/permission-service.js',
+        'js/ui/view-state.js',
+        'js/ui/components/main-view.js',
+        'js/ui/components/detail-view.js',
         'js/manager.js'
     ];
 
@@ -27,6 +31,7 @@
         {
             const script = document.createElement('script');
             script.src = src;
+            script.async = false;
             script.onload = resolve;
             script.onerror = () => reject(new Error(`Error loading script: ${src}`));
             document.head.appendChild(script);

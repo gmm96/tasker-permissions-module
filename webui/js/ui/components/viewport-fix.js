@@ -8,10 +8,7 @@
         if (!height || height <= 0) return;
 
         document.body.style.minHeight = height + 'px';
-        document.querySelectorAll('.view-screen.active').forEach(function (element)
-        {
-            element.style.minHeight = height + 'px';
-        });
+        document.querySelectorAll('.view-screen.active').forEach((element) => element.style.minHeight = height + 'px');
     }
 
     function retryApplyHeight()
@@ -29,13 +26,6 @@
     window.addEventListener('orientationchange', () => setTimeout(applyHeight, 50));
 
     var observer = new MutationObserver(applyHeight);
-    observer.observe(
-        document.body,
-        {
-            attributes: true,
-            childList: true,
-            subtree: true,
-            attributeFilter: ['class']
-        }
-    );
+    observer.observe(document.body, { attributes: true, childList: true, subtree: true, attributeFilter: ['class'] });
+
 })();

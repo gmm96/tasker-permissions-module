@@ -650,8 +650,7 @@ h1 {
 
 
 /* ============================================
-   alertUi / confirmUi — sustituto de alert()/confirm()
-   nativos, que no funcionan dentro del WebView.
+   Dialogs
    ============================================ */
 
 .ui-modal-overlay {

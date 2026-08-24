@@ -1,93 +1,106 @@
-async function tryBridgeCall()
+const Shizuku = (() =>
 {
-    if (window.Shizuku && typeof window.Shizuku.exec === 'function')
+    async function tryBridgeCall()
     {
-        return { name: 'Shizuku.exec', run: (cmd) => window.Shizuku.exec(cmd) };
-    }
-    return null;
-}
-
-async function getModuleTrustInfo()
-{
-    if (!window.Shizuku || typeof window.Shizuku.getModuleInfo !== 'function') return null;
-    try
-    {
-        return JSON.parse(window.Shizuku.getModuleInfo());
-    }
-    catch (e)
-    {
+        if (window.Shizuku && typeof window.Shizuku.exec === 'function')
+        {
+            return { name: 'Shizuku.exec', run: (cmd) => window.Shizuku.exec(cmd) };
+        }
         return null;
     }
-}
 
-async function executeShell(command)
-{
-    try
+    async function getModuleTrustInfo()
     {
-        const bridge = await tryBridgeCall();
-        if (!bridge) return null;
-
-        const raw = await bridge.run(command);
-        if (typeof raw !== 'string') return null;
-
-        let parsed;
+        if (!window.Shizuku || typeof window.Shizuku.getModuleInfo !== 'function') return null;
         try
         {
-            parsed = JSON.parse(raw);
+            return JSON.parse(window.Shizuku.getModuleInfo());
         }
         catch (e)
         {
-            return raw;
+            return null;
         }
+    }
 
-        if (parsed && typeof parsed === 'object')
+    async function executeShell(command)
+    {
+        try
         {
-            if (parsed.ok === false)
+            const bridge = await tryBridgeCall();
+            if (!bridge) return null;
+
+            const raw = await bridge.run(command);
+            if (typeof raw !== 'string') return null;
+
+            let parsed;
+            try
             {
-                console.warn('Shizuku.exec reported failure for:', command, parsed.stderr);
-                return '';
+                parsed = JSON.parse(raw);
             }
-            return (parsed.stdout != null ? String(parsed.stdout) : '').trim();
+            catch (e)
+            {
+                return raw;
+            }
+
+            if (parsed && typeof parsed === 'object')
+            {
+                if (parsed.ok === false)
+                {
+                    console.warn('Shizuku.exec reported failure for:', command, parsed.stderr);
+                    return '';
+                }
+                return (parsed.stdout != null ? String(parsed.stdout) : '').trim();
+            }
+            return String(raw);
         }
-        return String(raw);
+        catch (err)
+        {
+            console.error("Shell execution error:", err);
+            return null;
+        }
     }
-    catch (err)
-    {
-        console.error("Shell execution error:", err);
-        return null;
-    }
-}
 
-function showBridgeDebug(extraLine)
-{
-    const el = document.getElementById('bridgeDebug');
-    if (!el) return;
-    el.style.display = 'block';
-    let html = window.Shizuku
-        ? 'Detected on window: <br>' + JSON.stringify(window.Shizuku, null, 4)
-        : 'No Shizuku shell bridge object found on window.';
-    if (extraLine) html = extraLine + '<br><br>' + html;
-    el.innerHTML = html;
-}
+    function showBridgeDebug(extraLine)
+    {
+        const el = document.getElementById('bridgeDebug');
+        if (!el) return;
+        el.style.display = 'block';
+        let html = window.Shizuku
+            ? 'Detected on window: <br>' + JSON.stringify(window.Shizuku, null, 4)
+            : 'No Shizuku shell bridge object found on window.';
+        if (extraLine) html = extraLine + '<br><br>' + html;
+        el.innerHTML = html;
+    }
 
-async function ensureBridgeReady()
-{
-    const bridge = await tryBridgeCall();
-    if (!bridge)
+    async function ensureBridgeReady()
     {
-        showBridgeDebug('No window.Shizuku bridge object found — nothing was granted.');
-        alertUi("Could not reach the ADB shell bridge — nothing was granted. See the debug info under the header.");
-        return false;
+        const bridge = await tryBridgeCall();
+        if (!bridge)
+        {
+            showBridgeDebug('No window.Shizuku bridge object found — nothing was granted.');
+            Dialogs.alert("Could not reach the ADB shell bridge — nothing was granted. See the debug info under the header.");
+            return false;
+        }
+        const trustInfo = await getModuleTrustInfo();
+        if (trustInfo && trustInfo.trusted === false)
+        {
+            showBridgeDebug(
+                `Module "${trustInfo.id || 'tasker-permissions'}" is not trusted — nothing was granted. ` +
+                `Long-press this module's card in Shevery and grant Full Trust / Full Access.`
+            );
+            Dialogs.alert("This module isn't trusted yet in Shevery — nothing was granted. See the debug info under the header.");
+            return false;
+        }
+        return true;
     }
-    const trustInfo = await getModuleTrustInfo();
-    if (trustInfo && trustInfo.trusted === false)
-    {
-        showBridgeDebug(
-            `Module "${trustInfo.id || 'tasker-permissions'}" is not trusted — nothing was granted. ` +
-            `Long-press this module's card in Shevery and grant Full Trust / Full Access.`
-        );
-        alertUi("This module isn't trusted yet in Shevery — nothing was granted. See the debug info under the header.");
-        return false;
-    }
-    return true;
-}
+
+    
+    return {
+        tryBridgeCall,
+        getModuleTrustInfo,
+        executeShell,
+        showBridgeDebug,
+        ensureBridgeReady
+    };
+
+})();

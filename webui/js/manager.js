@@ -2,6 +2,7 @@ const allPermissions = Object.fromEntries(
     Object.entries((typeof PERMISSIONINFO !== 'undefined') ? PERMISSIONINFO : {})
         .map( ([ name, desc ]) => [ name, new Permission(name, desc) ] )
 );
+
 const allApps = ((typeof APPSDATA !== 'undefined') ? APPSDATA : [])
     .map(app =>
     {
@@ -12,10 +13,13 @@ const allApps = ((typeof APPSDATA !== 'undefined') ? APPSDATA : [])
         return new App(app.id, app.name, app.package, permissionModels, app.icon);
     })
     .sort( (a, b) => a.name.localeCompare(b.name) );
-let viewState = new ViewState();
+
+let viewState = null;
 
 
+/////////////////////////////////////////////////
 // #region MAIN VIEW
+//
 
 function getTabApps()
 {
@@ -26,7 +30,7 @@ function getTabApps()
 
         if (viewState.tab !== TabStatus.ALLAPPS)
         {
-            const targetAppStatus = StatusMapper.toAppStatus(viewState.tab);
+            const targetAppStatus = StatusMapper.tabStatustoAppStatus(viewState.tab);
             if (appViewModel.status !== targetAppStatus) return false;
         }
         
@@ -54,11 +58,11 @@ async function updateAllStatuses()
 
     for (const app of allApps)
     {
-        const appCondition = await inspectAppPermissions(app);
+        const appCondition = await PermissionService.inspectAppPermissions(app);
         const appViewModel = new AppViewModel(app, appCondition);
         
         viewState.appViewModelDict[app.id] = appViewModel;
-        const tabStatus = StatusMapper.toTabStatus(appViewModel.status);
+        const tabStatus = StatusMapper.appStatustoTabStatus(appViewModel.status);
         if (tabStatus && counts[tabStatus] !== undefined) counts[tabStatus]++;
     }
     
@@ -67,10 +71,31 @@ async function updateAllStatuses()
     MainView.renderList(getTabApps(), viewState.appViewModelDict, openAppDetailView);
 }
 
+function onTabChange(newTab)
+{
+    viewState.tab = newTab;
+    MainView.renderList(getTabApps(), viewState.appViewModelDict, openAppDetailView);
+}
+
+SearchInput.wire('searchInput', 'clearSearchBtn', (query) =>
+{
+    viewState.searchQuery = query;
+    MainView.renderList(getTabApps(), viewState.appViewModelDict, openAppDetailView);
+});
+
+//
 // #endregion MAIN VIEW
+/////////////////////////////////////////////////
 
 
+/////////////////////////////////////////////////
 // #region DETAIL VIEW
+//
+
+function onPermissionCheckboxChange()
+{
+    DetailView.renderDetailActionButtons(viewState.getActiveAppViewModel());
+}
 
 async function openAppDetailView(app)
 {
@@ -79,8 +104,7 @@ async function openAppDetailView(app)
     viewState.activeApp = app;
     let appViewModel = viewState.appViewModelDict[app.id] || new AppViewModel(app, new AppCondition(AppStatus.LOADING));
 
-    const onCheckboxChange = () => renderDetailActionButtons(viewState.getActiveAppViewModel());
-    DetailView.renderContent(appViewModel, onCheckboxChange);
+    DetailView.renderContent(appViewModel, onPermissionCheckboxChange);
     DetailView.show();
 
     const searchInput = document.getElementById('detailSearchInput');
@@ -89,276 +113,108 @@ async function openAppDetailView(app)
 
     if (!viewState.appViewModelDict[app.id] || appViewModel.status === AppStatus.LOADING)
     {
-        const appCondition = await inspectAppPermissions(app);
+        const appCondition = await PermissionService.inspectAppPermissions(app);
         const freshViewModel = new AppViewModel(app, appCondition);
         viewState.appViewModelDict[app.id] = freshViewModel;
-        
-        if (viewState.activeApp && viewState.activeApp.id === app.id) DetailView.renderContent(freshViewModel, onCheckboxChange);
-    }
-}
-
-// #endregion DETAIL VIEW
-
-
-///////////////////////////////////////////////////////////////////////////////
-// #region BUTTONS
-
-async function runBulkPermissionAction(options)
-{
-    const
-    {
-        action,
-        targets,
-        emptyMessage,
-        confirmMessage,
-        confirmOptions,
-        loadingText,
-        successMessage,
-        goBackAfter = false
-    } = options;
-
-    if (!targets || targets.length === 0)
-    {
-        if (emptyMessage) alertUi(emptyMessage);
-        return;
-    }
-
-    if (confirmMessage)
-    {
-        const ok = await confirmUi(confirmMessage, confirmOptions);
-        if (!ok) return;
-    }
-
-    if (!(await ensureBridgeReady())) return;
-
-    showLoadingSpinner(loadingText);
-    await new Promise(r => setTimeout(r, 100));
-
-    try
-    {
-        for (const target of targets)
+        if (viewState.activeApp && viewState.activeApp.id === app.id)
         {
-            await processPermissions(target.pkg, target.perms, action);
+            DetailView.renderContent(freshViewModel, onPermissionCheckboxChange);
         }
-        await updateAllStatuses();
     }
-    finally
-    {
-        hideLoadingSpinner();
-    }
-
-    if (goBackAfter)
-    {
-        viewState.activeApp = null;
-        MainView.show();
-    }
-    alertUi(successMessage);
 }
 
-document.getElementById('grantAllBtn').onclick = () =>
-    runBulkPermissionAction({
-        action: 'grant',
-        targets: getTabApps().map(a => ({ pkg: a.package, perms: a.permissions.map(p => p.name) })),
-        confirmMessage: "Are you sure you want to grant full permissions to all supported apps?",
-        confirmOptions: { title: "Grant all", confirmText: "Grant all" },
-        loadingText: "Granting permissions...",
-        successMessage: "All permissions granted successfully."
-    });
-
-document.getElementById('revokeAllBtn').onclick = () =>
-    runBulkPermissionAction({
-        action: 'revoke',
-        targets: getTabApps().map(a => ({ pkg: a.package, perms: a.permissions.map(p => p.name) })),
-        confirmMessage: "Are you sure you want to revoke full permissions from all supported apps?",
-        confirmOptions: { title: "Revoke all", confirmText: "Revoke all", danger: true },
-        loadingText: "Revoking permissions...",
-        successMessage: "All permissions revoked successfully."
-    });
-
-function runSelectedPermissionAction(action)
-{
-    if (!viewState.activeApp) return;
-
-    const selectedPerms = DetailView.getSelectedPermissions();
-    const targetName = viewState.activeApp.name;
-
-    const texts = action === 'grant'
-        ? { verb: 'grant', ing: 'Granting', done: 'granted', prep: 'to' }
-        : { verb: 'revoke', ing: 'Revoking', done: 'revoked', prep: 'from' };
-
-    runBulkPermissionAction({
-        action,
-        targets: selectedPerms.length ? [{ pkg: viewState.activeApp.package, perms: selectedPerms }] : [],
-        emptyMessage: `No permissions selected to ${texts.verb}.`,
-        loadingText: `${texts.ing} permissions...`,
-        successMessage: `Permissions successfully ${texts.done} ${texts.prep} <b>${targetName}</b> app.`,
-        goBackAfter: true
-    });
-}
-
-document.getElementById('grantSelectedBtn').onclick = () => runSelectedPermissionAction('grant');
-document.getElementById('revokeSelectedBtn').onclick = () => runSelectedPermissionAction('revoke');
-
-document.getElementById('backBtn').onclick = () =>
+function onBackButton()
 {
     viewState.activeApp = null;
     MainView.show();
-};
-
-document.getElementById('detailPermsList').addEventListener('change', () => 
-    renderDetailActionButtons(viewState.getActiveAppViewModel())
-);
-
-function setAllDetailCheckboxes(checked)
-{
-    document.querySelectorAll('#detailPermsList .perm-card').forEach(card =>
-    {
-        if (card.style.display === 'none') return;
-        const cb = card.querySelector('input[type="checkbox"]');
-        if (cb && !cb.disabled) cb.checked = checked;
-    });
-    renderDetailActionButtons(viewState.getActiveAppViewModel());
 }
 
-document.getElementById('selectAllBtn').onclick = () => setAllDetailCheckboxes(true);
-document.getElementById('deselectAllBtn').onclick = () => setAllDetailCheckboxes(false);
-
-function wireSearchInput(inputId, clearBtnId, onChange)
-{
-    const input = document.getElementById(inputId);
-    const clearBtn = document.getElementById(clearBtnId);
-    if (!input || !clearBtn) return;
-
-    input.addEventListener('input', (e) =>
-    {
-        clearBtn.style.display = e.target.value.length > 0 ? 'flex' : 'none';
-        onChange(e.target.value.toLowerCase());
-    });
-
-    clearBtn.addEventListener('click', () =>
-    {
-        input.value = '';
-        clearBtn.style.display = 'none';
-        onChange('');
-        input.focus();
-    });
-}
-
-wireSearchInput('searchInput', 'clearSearchBtn', (query) =>
-{
-    viewState.searchQuery = query;
-    renderList();
-});
-
-wireSearchInput('detailSearchInput', 'clearDetailSearchBtn', (query) =>
-{
-    filterDetailPermissions(query);
-});
-
-// #endregion BUTTONS
-///////////////////////////////////////////////////////////////////////////////
-
-
-async function init()
-{
-    try
-    {
-        setupTabs();
-        renderList();
-        await updateAllStatuses();
-    }
-    catch(e)
-    {
-        console.error("Initialization error", e);
-        const list = document.getElementById('appsList');
-        if (list) list.innerHTML = '<div class="empty-message">Initialization error: ' + e.message + '</div>';
-    }
-}
-
-window.onload = init;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-// #region BUTTONS & EVENTS
-
-// Delegación de eventos general para cuando un checkbox cambia manualmente
-document.getElementById('detailPermsList').addEventListener('change', () => 
-    renderDetailActionButtons(viewState.getActiveAppViewModel())
-);
-
-document.getElementById('selectAllBtn').onclick = () => {
-    DetailView.setAllCheckboxes(true, () => renderDetailActionButtons(viewState.getActiveAppViewModel()));
-};
-
-document.getElementById('deselectAllBtn').onclick = () => {
-    DetailView.setAllCheckboxes(false, () => renderDetailActionButtons(viewState.getActiveAppViewModel()));
-};
-
-function wireSearchInput(inputId, clearBtnId, onChange)
-{
-    const input = document.getElementById(inputId);
-    const clearBtn = document.getElementById(clearBtnId);
-    if (!input || !clearBtn) return;
-
-    input.addEventListener('input', (e) =>
-    {
-        clearBtn.style.display = e.target.value.length > 0 ? 'flex' : 'none';
-        onChange(e.target.value.toLowerCase());
-    });
-
-    clearBtn.addEventListener('click', () =>
-    {
-        input.value = '';
-        clearBtn.style.display = 'none';
-        onChange('');
-        input.focus();
-    });
-}
-
-wireSearchInput('searchInput', 'clearSearchBtn', (query) =>
-{
-    viewState.searchQuery = query;
-    MainView.renderList(getTabApps(), viewState.appViewModelDict, openAppDetailView);
-});
-
-wireSearchInput('detailSearchInput', 'clearDetailSearchBtn', (query) =>
+SearchInput.wire('detailSearchInput', 'clearDetailSearchBtn', (query) =>
 {
     DetailView.filterPermissions(query);
 });
 
-// #endregion BUTTONS & EVENTS
-///////////////////////////////////////////////////////////////////////////////
+//
+// #endregion DETAIL VIEW
+/////////////////////////////////////////////////
 
+
+/////////////////////////////////////////////////
+// #region ACTIONS
+//
+
+document.getElementById('grantAllBtn').onclick = () =>
+{
+    PermissionService.runBulkAction(
+        {
+            action: 'grant',
+            targets: getTabApps().map(a => ({ pkg: a.package, perms: a.permissions.map(p => p.name) })),
+            confirmMessage: "Are you sure you want to grant full permissions to all supported apps?",
+            confirmOptions: { title: "Grant all", confirmText: "Grant all" },
+            loadingText: "Granting permissions...",
+            successMessage: "All permissions granted successfully."
+        },
+        updateAllStatuses,
+        onBackButton
+    );
+};
+document.getElementById('revokeAllBtn').onclick = () =>
+{
+    PermissionService.runBulkAction(
+        {
+            action: 'revoke',
+            targets: getTabApps().map(a => ({ pkg: a.package, perms: a.permissions.map(p => p.name) })),
+            confirmMessage: "Are you sure you want to revoke full permissions from all supported apps?",
+            confirmOptions: { title: "Revoke all", confirmText: "Revoke all", danger: true },
+            loadingText: "Revoking permissions...",
+            successMessage: "All permissions revoked successfully."
+        },
+        updateAllStatuses,
+        onBackButton
+    );
+};
+
+document.getElementById('grantSelectedBtn').onclick = () =>
+{
+    PermissionService.runSelectedAction(
+        'grant', 
+        AppController.viewState.activeApp, 
+        DetailView.getSelectedPermissions(), 
+        updateAllStatuses, 
+        onBackButton
+    );
+};
+document.getElementById('revokeSelectedBtn').onclick = () =>
+{
+    PermissionService.runSelectedAction(
+        'revoke', 
+        AppController.viewState.activeApp, 
+        DetailView.getSelectedPermissions(), 
+        updateAllStatuses, 
+        onBackButton
+    );
+};
+
+document.getElementById('backBtn').onclick = onBackButton;
+document.getElementById('detailPermsList').addEventListener('change', onPermissionCheckboxChange);
+document.getElementById('selectAllBtn').onclick = () => DetailView.setAllCheckboxes(true, onPermissionCheckboxChange);
+document.getElementById('deselectAllBtn').onclick = () => DetailView.setAllCheckboxes(false, onPermissionCheckboxChange);
+
+//
+// #endregion ACTIONS
+/////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////
+// #region INIT
+//
 
 async function init()
 {
     try
     {
-        // Configuramos la navegación inyectando qué debe hacer el manager
-        MainView.setupTabs((newFilter) => {
-            viewState.tab = newFilter;
-            MainView.renderList(getTabApps(), viewState.appViewModelDict, openAppDetailView);
-        });
-
+        viewState = new ViewState();
+        MainView.setupTabs(onTabChange);
         MainView.renderList(getTabApps(), viewState.appViewModelDict, openAppDetailView);
         await updateAllStatuses();
     }
@@ -369,5 +225,9 @@ async function init()
         if (list) list.innerHTML = '<div class="empty-message">Initialization error: ' + e.message + '</div>';
     }
 }
+
+//
+// #endregion INIT
+/////////////////////////////////////////////////
 
 window.onload = init;

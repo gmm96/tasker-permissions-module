@@ -28,12 +28,7 @@ const DetailView = (() =>
                     { transform: `translateX(-${overflow}px)`, offset: 0.85 },
                     { transform: `translateX(-${overflow}px)`, offset: 1 }
                 ],
-                {
-                    duration: 5000,
-                    iterations: Infinity,
-                    direction: 'alternate',
-                    easing: 'ease-in-out'
-                }
+                { duration: 5000, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out' }
             );
         }
     }
@@ -135,7 +130,7 @@ const DetailView = (() =>
             const cb = card.querySelector('input[type="checkbox"]');
             if (cb && !cb.disabled) cb.checked = checked;
         });
-
+        
         onCheckboxChange();
     }
 
@@ -154,13 +149,9 @@ const DetailView = (() =>
 
         cards.forEach(card =>
         {
-            const nameSpan = card.querySelector('.perm-name');
-            const descSpan = card.querySelector('.perm-desc');
-
-            const text = ((nameSpan ? nameSpan.textContent : '') + ' ' + (descSpan ? descSpan.textContent : ''))
-            .toLowerCase();
-
-            if (text.includes(query))
+            const name = card.querySelector('input[type="checkbox"]').value.toLowerCase();
+            const cleanName = card.querySelector('.perm-name').textContent.toLowerCase();
+            if (cleanName.includes(query) || name.includes(query))
             {
                 card.style.display = 'flex';
                 hasVisible = true;
@@ -175,16 +166,25 @@ const DetailView = (() =>
         if (emptyMsg) emptyMsg.style.display = (!hasVisible && cards.length > 0) ? 'block' : 'none';
     }
 
-
-    return
+    function renderDetailActionButtons(appViewModel)
     {
+        if (!appViewModel) return;
+
+        const hasChecked = document.querySelectorAll('#detailPermsList input[type="checkbox"]:checked').length > 0;
+        document.getElementById('grantSelectedBtn').disabled = appViewModel.disabled || !hasChecked;
+        document.getElementById('revokeSelectedBtn').disabled = appViewModel.disabled || !hasChecked;
+    }
+
+
+    return {
         show,
         applyMarquee,
         clearSearchInput,
         renderContent,
         setAllCheckboxes,
         getSelectedPermissions,
-        filterPermissions
+        filterPermissions,
+        renderDetailActionButtons
     };
 
 })();

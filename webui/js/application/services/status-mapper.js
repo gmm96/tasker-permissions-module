@@ -1,6 +1,6 @@
-class StatusMapper
+const StatusMapper = (() =>
 {
-    static #appToTab = new Map
+    const appToTab = new Map
     ([
         [AppStatus.NONEGRANTED, TabStatus.NONEGRANTED],
         [AppStatus.PARTIAL, TabStatus.PARTIAL],
@@ -8,7 +8,7 @@ class StatusMapper
         [AppStatus.NOTINSTALLED, TabStatus.NOTINSTALLED]
     ]);
 
-    static #tabToApp = new Map
+    const tabToApp = new Map
     ([
         [TabStatus.NONEGRANTED, AppStatus.NONEGRANTED],
         [TabStatus.PARTIAL, AppStatus.PARTIAL],
@@ -16,13 +16,20 @@ class StatusMapper
         [TabStatus.NOTINSTALLED, AppStatus.NOTINSTALLED]
     ]);
 
-    static toTabStatus(appStatus)
+    function appStatustoTabStatus(appStatus)
     {
-        return this.#appToTab.get(appStatus) ?? null;
+        return appToTab.get(appStatus) ?? null;
     }
 
-    static toAppStatus(tabStatus)
+    function tabStatustoAppStatus(tabStatus)
     {
-        return this.#tabToApp.get(tabStatus) ?? null;
+        return tabToApp.get(tabStatus) ?? null;
     }
-}
+
+    
+    return {
+        appStatustoTabStatus,
+        tabStatustoAppStatus
+    }
+
+})();

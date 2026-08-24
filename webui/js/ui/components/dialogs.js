@@ -1,4 +1,4 @@
-(function ()
+const Dialogs = (() =>
 {
     const overlay = document.createElement('div');
     overlay.className = 'ui-modal-overlay';
@@ -11,11 +11,9 @@
     `;
     document.body.appendChild(overlay);
 
-    const modal = overlay.querySelector('.ui-modal');
     const titleElement = overlay.querySelector('.ui-modal-title');
     const messageElement = overlay.querySelector('.ui-modal-message');
     const actionElements = overlay.querySelector('.ui-modal-actions');
-
     let queue = Promise.resolve();
 
     function buildButton(label, variant, onClick)
@@ -25,6 +23,7 @@
         btn.className = 'ui-modal-btn' + (variant ? (' ' + variant) : '');
         btn.textContent = label;
         btn.onclick = onClick;
+
         return btn;
     }
 
@@ -58,47 +57,55 @@
             };
 
             setup.buttons(finish).forEach(btn => actionElements.appendChild(btn));
-
             overlay.onclick = (e) =>
             {
                 if (e.target === overlay && setup.dismissible !== false) finish(setup.dismissValue);
             };
-
             openModal();
         });
 
         const result = queue.then(task);
-        queue = result.then(() => {}, () => {});
+        queue = result.then( () => {}, () => {} );
         return result;
     }
 
-    window.alertUi = function (message, options)
+    function alert(message, options)
     {
         options = options || {};
+
         return runModal(
-            {
-                title: options.title,
-                message: message,
-                dismissValue: undefined,
-                buttons: (finish) => [ buildButton(options.buttonText || 'OK', 'ui-modal-btn-primary', () => finish()) ]
-            }
-        );
+        {
+            title: options.title,
+            message: message,
+            dismissValue: undefined,
+            buttons: (finish) =>
+            [
+                buildButton(options.buttonText || 'OK', 'ui-modal-btn-primary', () => finish())
+            ]
+        });
+    }
+
+    function confirm(message, options)
+    {
+        options = options || {};
+
+        return runModal(
+        {
+            title: options.title,
+            message: message,
+            dismissValue: false,
+            buttons: (finish) =>
+            [
+                buildButton(options.cancelText || 'Cancel', 'ui-modal-btn-secondary', () => finish(false)),
+                buildButton(options.confirmText || 'Confirm', options.danger ? 'ui-modal-btn-danger' : 'ui-modal-btn-primary', () => finish(true))
+            ]
+        });
+    }
+
+
+    return {
+        alert,
+        confirm
     };
 
-    window.confirmUi = function (message, options)
-    {
-        options = options || {};
-        return runModal(
-            {
-                title: options.title,
-                message: message,
-                dismissValue: false,
-                buttons: (finish) =>
-                [
-                    buildButton(options.cancelText || 'Cancel', 'ui-modal-btn-secondary', () => finish(false)),
-                    buildButton(options.confirmText || 'Confirm', options.danger ? 'ui-modal-btn-danger' : 'ui-modal-btn-primary', () => finish(true))
-                ]
-            }
-        );
-    };
 })();
