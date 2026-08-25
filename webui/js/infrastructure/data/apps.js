@@ -1,4 +1,4 @@
-const APPSDATA =
+export const APPSDATA =
 [
     {
         id: "tasker",

@@ -1,4 +1,4 @@
-class Permission
+export class Permission
 {
     constructor(name, description) 
     {

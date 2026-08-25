@@ -1,4 +1,4 @@
-class PermissionViewModel
+export class PermissionViewModel
 {
     constructor(permission, isGranted, isAppUiDisabled)
     {

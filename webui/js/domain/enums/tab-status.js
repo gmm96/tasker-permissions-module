@@ -1,4 +1,4 @@
-class TabStatus
+export class TabStatus
 {
     static ALLAPPS = "all-apps";
     static ALLGRANTED = "all-granted";

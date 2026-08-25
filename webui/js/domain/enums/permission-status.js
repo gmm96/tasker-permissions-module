@@ -1,4 +1,4 @@
-class PermissionStatus
+export class PermissionStatus
 {
     static GRANTED = 'granted';
     static NOTGRANTED = 'not-granted';

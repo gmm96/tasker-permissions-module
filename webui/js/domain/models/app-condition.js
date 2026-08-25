@@ -1,4 +1,7 @@
-class AppCondition
+import { AppStatus } from '../../domain/enums/app-status.js';
+
+
+export class AppCondition
 {
     constructor(status, grantedPermissionsMap)
     {

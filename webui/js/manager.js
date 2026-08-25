@@ -1,3 +1,19 @@
+import './ui/components/viewport-fix.js';
+import { PERMISSIONINFO } from './infrastructure/data/permissions.js';
+import { APPSDATA } from './infrastructure/data/apps.js';
+import { Permission } from './domain/models/permission.js';
+import { App } from './domain/models/app.js';
+import { AppCondition } from './domain/models/app-condition.js';
+import { AppStatus } from './domain/enums/app-status.js';
+import { TabStatus } from './domain/enums/tab-status.js';
+import { ViewState } from './ui/view-state.js';
+import { AppViewModel } from './ui/viewmodels/app-viewmodel.js';
+import * as MainView from './ui/components/main-view.js';
+import * as DetailView from './ui/components/detail-view.js';
+import * as SearchInput from './ui/components/search-input.js';
+import * as StatusMapper from './application/services/status-mapper.js';
+import * as PermissionService from './application/services/permission-service.js';
+
 const allPermissions = Object.fromEntries(
     Object.entries((typeof PERMISSIONINFO !== 'undefined') ? PERMISSIONINFO : {})
         .map( ([ name, desc ]) => [ name, new Permission(name, desc) ] )
@@ -42,6 +58,19 @@ function getTabApps()
         }
 
         return true;
+    });
+}
+
+function getValidTabApps()
+{
+    return getTabApps().filter(app => 
+    {
+        const appViewModel = viewState.appViewModelDict[app.id];
+        if (!appViewModel) return false;
+
+        return appViewModel.status !== AppStatus.NOTINSTALLED
+            && appViewModel.status !== AppStatus.ERROR
+            && appViewModel.status !== AppStatus.LOADING;
     });
 }
 
@@ -148,7 +177,7 @@ document.getElementById('grantAllBtn').onclick = () =>
     PermissionService.runBulkAction(
         {
             action: 'grant',
-            targets: getTabApps().map(a => ({ pkg: a.package, perms: a.permissions.map(p => p.name) })),
+            targets: getValidTabApps().map(a => ({ pkg: a.package, perms: a.permissions.map(p => p.name) })),
             confirmMessage: "Are you sure you want to grant full permissions to all supported apps?",
             confirmOptions: { title: "Grant all", confirmText: "Grant all" },
             loadingText: "Granting permissions...",
@@ -163,7 +192,7 @@ document.getElementById('revokeAllBtn').onclick = () =>
     PermissionService.runBulkAction(
         {
             action: 'revoke',
-            targets: getTabApps().map(a => ({ pkg: a.package, perms: a.permissions.map(p => p.name) })),
+            targets: getValidTabApps().map(a => ({ pkg: a.package, perms: a.permissions.map(p => p.name) })),
             confirmMessage: "Are you sure you want to revoke full permissions from all supported apps?",
             confirmOptions: { title: "Revoke all", confirmText: "Revoke all", danger: true },
             loadingText: "Revoking permissions...",
@@ -178,7 +207,7 @@ document.getElementById('grantSelectedBtn').onclick = () =>
 {
     PermissionService.runSelectedAction(
         'grant', 
-        AppController.viewState.activeApp, 
+        viewState.activeApp, 
         DetailView.getSelectedPermissions(), 
         updateAllStatuses, 
         onBackButton
@@ -188,7 +217,7 @@ document.getElementById('revokeSelectedBtn').onclick = () =>
 {
     PermissionService.runSelectedAction(
         'revoke', 
-        AppController.viewState.activeApp, 
+        viewState.activeApp, 
         DetailView.getSelectedPermissions(), 
         updateAllStatuses, 
         onBackButton

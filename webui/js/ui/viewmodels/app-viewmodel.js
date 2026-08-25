@@ -1,4 +1,8 @@
-class AppViewModel
+import { AppStatus } from '../../domain/enums/app-status.js';
+import { PermissionViewModel } from './permission-viewmodel.js';
+
+
+export class AppViewModel
 {
     constructor(app, appCondition)
     {

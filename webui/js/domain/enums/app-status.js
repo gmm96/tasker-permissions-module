@@ -1,4 +1,4 @@
-class AppStatus
+export class AppStatus
 {
     static ALLGRANTED = 'all-granted';
     static NONEGRANTED = 'none-granted';

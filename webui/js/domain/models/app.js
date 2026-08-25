@@ -1,4 +1,4 @@
-class App
+export class App
 {
     constructor(id, name, packageName, permissions, icon = null)
     {

@@ -1,4 +1,7 @@
-class ViewState
+import { TabStatus } from '../domain/enums/tab-status.js';
+
+
+export class ViewState
 {
     constructor()
     {
