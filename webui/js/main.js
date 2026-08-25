@@ -172,57 +172,42 @@ SearchInput.wire('detailSearchInput', 'clearDetailSearchBtn', (query) =>
 // #region ACTIONS
 //
 
-document.getElementById('grantAllBtn').onclick = () =>
+function handleBulkAction(options)
 {
-    PermissionService.runBulkAction(
+    options.targets = getValidTabApps().map(a => ({ pkg: a.package, perms: a.permissions.map(p => p.name) }));
+    PermissionService.runBulkAction(options, updateAllStatuses, onBackButton);
+}
+
+function handleSelectedAction(action)
+{
+    if (!['grant', 'revoke'].includes(action)) return;
+    PermissionService.runSelectedAction(action, viewState.activeApp, DetailView.getSelectedPermissions(), updateAllStatuses, onBackButton);
+}
+
+document.getElementById('grantAllBtn').onclick = () => 
+    handleBulkAction(
         {
             action: 'grant',
-            targets: getValidTabApps().map(a => ({ pkg: a.package, perms: a.permissions.map(p => p.name) })),
             confirmMessage: "Are you sure you want to grant full permissions to all supported apps?",
             confirmOptions: { title: "Grant all", confirmText: "Grant all" },
             loadingText: "Granting permissions...",
             successMessage: "All permissions granted successfully."
-        },
-        updateAllStatuses,
-        onBackButton
+        }
     );
-};
+
 document.getElementById('revokeAllBtn').onclick = () =>
-{
-    PermissionService.runBulkAction(
+    handleBulkAction(
         {
             action: 'revoke',
-            targets: getValidTabApps().map(a => ({ pkg: a.package, perms: a.permissions.map(p => p.name) })),
             confirmMessage: "Are you sure you want to revoke full permissions from all supported apps?",
             confirmOptions: { title: "Revoke all", confirmText: "Revoke all", danger: true },
             loadingText: "Revoking permissions...",
             successMessage: "All permissions revoked successfully."
-        },
-        updateAllStatuses,
-        onBackButton
+        }
     );
-};
 
-document.getElementById('grantSelectedBtn').onclick = () =>
-{
-    PermissionService.runSelectedAction(
-        'grant', 
-        viewState.activeApp, 
-        DetailView.getSelectedPermissions(), 
-        updateAllStatuses, 
-        onBackButton
-    );
-};
-document.getElementById('revokeSelectedBtn').onclick = () =>
-{
-    PermissionService.runSelectedAction(
-        'revoke', 
-        viewState.activeApp, 
-        DetailView.getSelectedPermissions(), 
-        updateAllStatuses, 
-        onBackButton
-    );
-};
+document.getElementById('grantSelectedBtn').onclick = () => handleSelectedAction('grant');
+document.getElementById('revokeSelectedBtn').onclick = () => handleSelectedAction('revoke');
 
 document.getElementById('backBtn').onclick = onBackButton;
 document.getElementById('detailPermsList').addEventListener('change', onPermissionCheckboxChange);
