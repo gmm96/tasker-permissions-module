@@ -194,7 +194,6 @@ document.getElementById('grantAllBtn').onclick = () =>
             successMessage: "All permissions granted successfully."
         }
     );
-
 document.getElementById('revokeAllBtn').onclick = () =>
     handleBulkAction(
         {
@@ -205,11 +204,11 @@ document.getElementById('revokeAllBtn').onclick = () =>
             successMessage: "All permissions revoked successfully."
         }
     );
-
 document.getElementById('grantSelectedBtn').onclick = () => handleSelectedAction('grant');
 document.getElementById('revokeSelectedBtn').onclick = () => handleSelectedAction('revoke');
 
 document.getElementById('backBtn').onclick = onBackButton;
+
 document.getElementById('detailPermsList').addEventListener('change', onPermissionCheckboxChange);
 document.getElementById('selectAllBtn').onclick = () => DetailView.setAllCheckboxes(true, onPermissionCheckboxChange);
 document.getElementById('deselectAllBtn').onclick = () => DetailView.setAllCheckboxes(false, onPermissionCheckboxChange);
