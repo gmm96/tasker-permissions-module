@@ -1,8 +1,9 @@
-id=tasker-hidden-permissions
-name=Tasker Hidden Permissions
+id=tasker-permissions-module
+name=Tasker Permissions Module
 version=1.0
 versionCode=1
 author=gmm96
 description=Grant advanced hidden permissions to Tasker related apps.
 action=action.sh
+usesShellBridge=true
 webui=true
