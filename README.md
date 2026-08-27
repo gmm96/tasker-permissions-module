@@ -1,6 +1,6 @@
 # Tasker Permissions Module
 
-Tasker Permissions Module is an advanced module built for Shizuku forks that implement the ADB Modules feature, such as [**Shevery**](https://github.com/HmnDev-Tech/shevery) or [**Nightzuku**](https://github.com/kerneldroid/Nightzuku). Its primary purpose is to bypass the need for a PC connection by providing on-device management of hidden, restricted, and advanced Android permissions (`WRITE_SECURE_SETTINGS`, `DUMP`, etc.) strictly for applications within the **Tasker automation ecosystem**.
+**Tasker Permissions Module** is an advanced module built for Shizuku forks that implement the ADB Modules feature, such as [**Shevery**](https://github.com/HmnDev-Tech/shevery) or [**Nightzuku**](https://github.com/kerneldroid/Nightzuku). Its primary purpose is to bypass the need for a PC connection by providing on-device management of hidden, restricted, and advanced Android permissions (`WRITE_SECURE_SETTINGS`, `DUMP`, etc.) strictly for applications within the **Tasker automation ecosystem**.
 
 
 ## Components
