@@ -29,9 +29,9 @@ grant_package_permissions()
 # ===================================================================
 
 
-echo "========================="
-echo "   Hidden Permissions    "
-echo "========================="
+echo "================================"
+echo "   Tasker Permissions Module    "
+echo "================================"
 
 # Tasker
 TASKER_PKG="net.dinglisch.android.taskerm";
