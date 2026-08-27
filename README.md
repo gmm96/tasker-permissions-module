@@ -19,6 +19,24 @@ The module consists of two main execution layers:
 * **Strict Local Environment:** This module doesn't need an internet connection at all. It's built entirely on native ES6 modules with zero external network dependencies.
 
 
+## Screenshots
+
+![Module manager](docs/screenshots/module_manager.jpg)
+![Main view: All apps](docs/screenshots/main_view_all.jpg)
+![Grant all confirmation](docs/screenshots/grant_all_confirm.jpg)
+
+![Grant all result](docs/screenshots/grant_all_result.jpg)
+![App view: Tasker](docs/screenshots/app_view2.jpg)
+![App view: AppManagerNG](docs/screenshots/app_view_1.jpg)
+
+![Spinner](docs/screenshots/spinner.jpg)
+![Granted selected result](docs/screenshots/granted_selected.jpg)
+![alt text](docs/screenshots/app_view_notinstalled.jpg)
+
+![Before executing action.sh](docs/screenshots/action_before.jpg)
+![After executing action.sh](docs/screenshots/action_after.jpg)
+
+
 ## Supported Applications
 
 The target scope of this module is explicitly limited to the following Tasker related applications:
