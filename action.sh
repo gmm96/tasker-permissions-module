@@ -1,7 +1,9 @@
 #!/system/bin/sh
 
-
-# ===================================================================
+installed_count=0;
+not_installed_count=0;
+permission_count=0;
+error_count=0;
 
 
 grant_package_permissions()
@@ -10,32 +12,37 @@ grant_package_permissions()
     shift;
     package_permissions="$@";
 
+    echo -e "------- PACKAGE -------\n$package_id";
     if pm list packages | grep -q "package:$package_id";
     then
-        echo "Package detected: $package_id. Applying config...";
+        echo -e "------- STATUS -------\nInstalled";
+        installed_count=$((installed_count + 1))
         
+        echo "----- PERMISSIONS -----";
         for permission in $package_permissions;
         do
+            clean_permission="${permission#android.permission.}";
             if pm grant "$package_id" "$permission" > /dev/null 2>&1;
             then
-                echo "  -> Granted: $permission";
+                echo -e "[ ✔ ] $clean_permission";
+                permission_count=$((permission_count + 1));
             else
-                echo "  -> FAILED: $permission";
+                echo -e "[ ✘ ] $clean_permission";
+                error_count=$((error_count + 1));
             fi
         done
     else
-        echo "Package NOT installed: $package_id. Skipping.";
+        echo -e "------- STATUS -------\nNot Installed";
+        not_installed_count=$((not_installed_count + 1));
     fi
-    echo "-----------------------------------------";
+    echo -e "\n============================\n";
 }
 
 
-# ===================================================================
+echo -e "\n=============================";
+echo "  Tasker Permissions Module";
+echo -e "=============================\n\n";
 
-
-echo "================================"
-echo "   Tasker Permissions Module    "
-echo "================================"
 
 # Tasker
 TASKER_PKG="net.dinglisch.android.taskerm";
@@ -181,7 +188,12 @@ NIGHTZUKU_PERMS="
 grant_package_permissions "$NIGHTZUKU_PKG" $NIGHTZUKU_PERMS;
 
 
-# ===================================================================
 
-
-echo "Finished!";
+echo -e "\n\n============================";
+echo "      EXECUTION SUMMARY";
+echo "============================";
+echo " Apps Found          :   $installed_count";
+echo " Apps Not Installed  :   $not_installed_count";
+echo " Permissions Granted :   $permission_count";
+echo " Errors/Failures     :   $error_count";
+echo -e "============================\n\n";

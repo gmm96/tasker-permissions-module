@@ -98,6 +98,15 @@ Regardless of the installation method used, it is required to apply the followin
 3. Run the included `build.sh` script to generate a compliant `.zip` package.
 
 
+## Disclaimer
+
+This project is an independent, third-party open-source endeavor. It is **not** affiliated, associated, authorized, endorsed by, or in any way officially connected with **Tasker**, its owner, or any of the developers of the supported applications listed above. 
+
+All product names, logos, brands, and registered trademarks are the property of their respective original owners. The use of these trade names and trademarks within this project is strictly for identification and reference purposes only, and does not imply any endorsement, sponsorship, or association with the trademark holders.
+
+*Note: Modifying advanced Android permissions interacts directly with system-level security constraints. Any modifications made to your device or applications via this module are performed entirely at your own risk and discretion.*
+
+
 ## Contributing
 
 Pull requests are highly appreciated. Whether you are looking to improve the core execution logic, fix bugs, or add support for new applications, your contributions are welcome.
