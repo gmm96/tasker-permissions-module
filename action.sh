@@ -12,27 +12,27 @@ grant_package_permissions()
     shift;
     package_permissions="$@";
 
-    echo -e "------- PACKAGE -------\n$package_id";
+    echo -e "——— PACKAGE ———————————\n$package_id";
     if pm list packages | grep -q "package:$package_id";
     then
-        echo -e "------- STATUS -------\nInstalled";
+        echo -e "——— STATUS ————————————\ninstalled";
         installed_count=$((installed_count + 1))
         
-        echo "----- PERMISSIONS -----";
+        echo "——— PERMISSIONS ———————";
         for permission in $package_permissions;
         do
-            clean_permission="${permission#android.permission.}";
+            clean_permission="$(echo "${permission#android.permission.}" | tr '[:upper:]' '[:lower:]')";
             if pm grant "$package_id" "$permission" > /dev/null 2>&1;
             then
-                echo -e "[ ✔ ] $clean_permission";
+                echo -e "[✔] $clean_permission";
                 permission_count=$((permission_count + 1));
             else
-                echo -e "[ ✘ ] $clean_permission";
+                echo -e "[✘] $clean_permission";
                 error_count=$((error_count + 1));
             fi
         done
     else
-        echo -e "------- STATUS -------\nNot Installed";
+        echo -e "——— STATUS ————————————\nnot installed";
         not_installed_count=$((not_installed_count + 1));
     fi
     echo -e "\n============================\n";
@@ -192,8 +192,8 @@ grant_package_permissions "$NIGHTZUKU_PKG" $NIGHTZUKU_PERMS;
 echo -e "\n\n============================";
 echo "      EXECUTION SUMMARY";
 echo "============================";
-echo " Apps Found          :   $installed_count";
-echo " Apps Not Installed  :   $not_installed_count";
-echo " Permissions Granted :   $permission_count";
-echo " Errors/Failures     :   $error_count";
+echo " Apps found          :   $installed_count";
+echo " Apps not installed  :   $not_installed_count";
+echo " Granted permissions :   $permission_count";
+echo " Errors/failures     :   $error_count";
 echo -e "============================\n\n";

@@ -34,7 +34,8 @@ The module consists of two main execution layers:
 ![alt text](docs/screenshots/app_view_notinstalled.jpg)
 
 ![Before executing action.sh](docs/screenshots/action_before.jpg)
-![After executing action.sh](docs/screenshots/action_after.jpg)
+![After executing action.sh](docs/screenshots/action_after1.jpg)
+![Result executing action.sh](docs/screenshots/action_after2.jpg)
 
 
 ## Supported Applications
